@@ -32,7 +32,7 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-[350px]">
+      <div className="w-87.5">
         {/* Signup Card */}
         <div className="bg-white border border-gray-300 px-10 py-8 rounded-sm">
           <h1 className="text-4xl font-semibold text-center mb-4 font-serif">
