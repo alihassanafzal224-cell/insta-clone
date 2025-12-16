@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Heart, MessageCircle, Send, Bookmark } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, Home, PlusSquare, User } from "lucide-react";
 import { Navbar } from "../components/Navbar";
+import { Footer } from "../components/Footer";
 
 export default function HomePage() {
+  
   const dispatch = useDispatch();
-
   const user = useSelector((state) => state.auth.user);
 
   const [posts] = useState([
@@ -24,7 +25,7 @@ export default function HomePage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar/>
       {/* Feed */}
       <main className="pt-20 max-w-xl mx-auto">
@@ -66,6 +67,7 @@ export default function HomePage() {
           </div>
         ))}
       </main>
+      <Footer/>
     </div>
-  );
+     );
 }

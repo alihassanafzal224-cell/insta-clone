@@ -1,12 +1,16 @@
 import { Routes, Route, Navigate } from "react-router-dom"
-import ToDoList from "../pages/HomePage"
+import HomePage from "../pages/HomePage"
+import Post from "../pages/Post"
+import Profile from "../pages/Profile"
 
 export default function loginLayOut() {
 
 
     const route = <>
-        <Route path="/todolist" element={<ToDoList />} />
-        <Route path="*" element={<Navigate to="/todolist" />} />
+        <Route path="/" element={<HomePage/>} />
+        <Route path="/post" element={<Post/>} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="*" element={<Navigate to="/" />} />
     </>
     return (
         <Routes>
