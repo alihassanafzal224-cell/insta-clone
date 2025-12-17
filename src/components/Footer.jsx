@@ -1,7 +1,7 @@
 import { Home, PlusSquare, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-export const Footer = () => {
+export default function Footer(){
   const navigate = useNavigate();
 
   return (

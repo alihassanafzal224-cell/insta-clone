@@ -7,7 +7,7 @@ export const createPost = createAsyncThunk(
     try {
       const res = await fetch("http://localhost:8000/api/posts/create", {
         method: "POST",
-        body: formData, // FormData includes image + caption
+        body: formData,
         credentials: "include",
       });
 
@@ -22,7 +22,7 @@ export const createPost = createAsyncThunk(
   }
 );
 
-// FETCH POSTS
+// FETCH ALL POSTS
 export const fetchPosts = createAsyncThunk(
   "posts/fetch",
   async (_, { rejectWithValue }) => {
@@ -42,14 +42,34 @@ export const fetchPosts = createAsyncThunk(
   }
 );
 
+// FETCH USER POSTS
+export const fetchUserPosts = createAsyncThunk(
+  "posts/fetchUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      const res = await fetch("http://localhost:8000/api/posts/my-posts", {
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        return rejectWithValue("Failed to fetch user posts");
+      }
+
+      return await res.json();
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 // UPDATE POST
 export const updatePost = createAsyncThunk(
   "posts/update",
   async ({ id, formData }, { rejectWithValue }) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/posts/${id}`, {
+      const res = await fetch(`http://localhost:8000/api/posts/update/${id}`, {
         method: "PUT",
-        body: formData, // FormData includes updated caption + optional image
+        body: formData,
         credentials: "include",
       });
 
@@ -67,7 +87,7 @@ export const updatePost = createAsyncThunk(
 // INITIAL STATE
 const postSlice = createSlice({
   name: "posts",
-  initialState: { posts: [], loading: "idle", error: null },
+  initialState: { posts: [], loading: "idle", error: null, userPosts: [], userPostsLoading: "idle", userPostsError: null },
   reducers: {},
   extraReducers: (builder) => {
     builder
@@ -83,7 +103,7 @@ const postSlice = createSlice({
         state.loading = "failed";
         state.error = action.payload;
       })
-      // FETCH POSTS
+      // FETCH ALL POSTS
       .addCase(fetchPosts.pending, (state) => {
         state.loading = "loading";
       })
@@ -95,13 +115,24 @@ const postSlice = createSlice({
         state.loading = "failed";
         state.error = action.payload;
       })
+      // FETCH USER POSTS
+      .addCase(fetchUserPosts.pending, (state) => {
+        state.userPostsLoading = "loading";
+      })
+      .addCase(fetchUserPosts.fulfilled, (state, action) => {
+        state.userPostsLoading = "success";
+        state.userPosts = action.payload;
+      })
+      .addCase(fetchUserPosts.rejected, (state, action) => {
+        state.userPostsLoading = "failed";
+        state.userPostsError = action.payload;
+      })
       // UPDATE POST
       .addCase(updatePost.pending, (state) => {
         state.loading = "loading";
       })
       .addCase(updatePost.fulfilled, (state, action) => {
         state.loading = "success";
-        // Replace the updated post in posts array
         state.posts = state.posts.map((post) =>
           post._id === action.payload.updatedPost._id ? action.payload.updatedPost : post
         );
