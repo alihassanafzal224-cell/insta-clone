@@ -7,7 +7,6 @@ export default function AuthLayout() {
     const route = <>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
-
         <Route path="*" element={<Navigate to="/login" />} />
     </>
     return (

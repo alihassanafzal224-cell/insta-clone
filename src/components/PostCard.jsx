@@ -1,11 +1,14 @@
 import { Heart, MessageCircle, Send, Bookmark } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 export default function PostCard({ post, user }) {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(
     Math.floor(Math.random() * 100) + 1
   );
+  const navigate = useNavigate(); // Hook to navigate programmatically
 
   const toggleLike = () => {
     setLiked(!liked);
@@ -15,18 +18,30 @@ export default function PostCard({ post, user }) {
   // Detect video by extension
   const isVideo = post.image?.match(/\.(mp4|webm|mov|avi)$/i);
 
+  const handleUserProfileClick = (userId) => {
+    navigate(`/profile/${userId}`); // Navigate to user profile
+  };
+
   return (
     <div className="bg-white rounded-md shadow mb-6 overflow-hidden border">
       {/* Header */}
       <div className="flex items-center p-3">
-        <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
+        {/* User Avatar */}
+        <div
+          className="w-10 h-10 rounded-full overflow-hidden mr-3 cursor-pointer"
+          onClick={() => handleUserProfileClick(user._id)} // Navigate to user's profile on avatar click
+        >
           <img
             src={user?.avatar || "https://i.pravatar.cc/150?img=3"}
             alt={user?.username}
             className="w-full h-full object-cover"
           />
         </div>
-        <p className="font-semibold text-sm">
+        {/* User Username */}
+        <p
+          className="font-semibold text-sm cursor-pointer"
+          onClick={() => handleUserProfileClick(user._id)} // Navigate to user's profile on username click
+        >
           {user?.username}
         </p>
       </div>
@@ -56,9 +71,7 @@ export default function PostCard({ post, user }) {
       <div className="flex justify-between items-center px-3 py-2">
         <div className="flex space-x-4">
           <Heart
-            className={`w-6 h-6 cursor-pointer ${
-              liked ? "text-red-500" : ""
-            }`}
+            className={`w-6 h-6 cursor-pointer ${liked ? "text-red-500" : ""}`}
             onClick={toggleLike}
           />
           <MessageCircle className="w-6 h-6 cursor-pointer" />
@@ -75,9 +88,7 @@ export default function PostCard({ post, user }) {
       {/* Caption */}
       <div className="px-3 py-2">
         <p className="text-sm">
-          <span className="font-semibold mr-1">
-            {user?.username}
-          </span>
+          <span className="font-semibold mr-1">{user?.username}</span>
           {post.caption}
         </p>
       </div>

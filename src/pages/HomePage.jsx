@@ -9,6 +9,7 @@ import { fetchPosts } from "../store/feauters/postSlice";
 export default function HomePage() {
   const dispatch = useDispatch();
   const { posts, loading } = useSelector((state) => state.post);
+  const user = useSelector((state) => state.auth.user)
 
   useEffect(() => {
     dispatch(fetchPosts());
@@ -31,11 +32,18 @@ export default function HomePage() {
                 key={user._id}
                 className="flex flex-col items-center cursor-pointer"
               >
-                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-pink-500 p-0.5">
+                <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-gray-300 mb-4 md:mb-0">
                   <img
-                    src={user.avatar || "https://i.pravatar.cc/150?img=3"}
-                    alt={user.username}
+                    src={user?.avatar || "/default-avatar.png"}
+                    alt={`${user?.username || "User"}'s avatar`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
+                    onError={(e) => {
+                      // Prevent infinite loops by checking if we're already showing default
+                      if (e.target.src !== window.location.origin + "/default-avatar.png") {
+                        e.target.src = "/default-avatar.png";
+                      }
+                    }}
                   />
                 </div>
                 <p className="text-xs mt-1 truncate w-16 text-center">
@@ -54,7 +62,7 @@ export default function HomePage() {
 
           {posts.length > 0 &&
             posts.map((post) => (
-              <PostCard key={post._id} post={post} user={post.user} />
+              <PostCard key={post._id} post={post} user={user} />
             ))}
 
           {loading !== "loading" && posts.length === 0 && (
