@@ -24,33 +24,37 @@ export default function HomePage() {
         <div className="bg-white border-b border-gray-300 py-3 px-4 overflow-x-auto flex space-x-4">
           {posts
             .map((p) => p.user)
+            .filter((u) => u && u._id) // ✅ critical
             .filter(
               (v, i, a) => a.findIndex((u) => u._id === v._id) === i
             )
             .map((user) => (
               <div
-                key={user._id}
+                key={user._id} // now guaranteed
                 className="flex flex-col items-center cursor-pointer"
               >
                 <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-gray-300 mb-4 md:mb-0">
                   <img
-                    src={user?.avatar || "/default-avatar.png"}
-                    alt={`${user?.username || "User"}'s avatar`}
+                    src={user.avatar || "/default-avatar.png"}
+                    alt={`${user.name || "User"}'s avatar`}
                     className="w-full h-full object-cover"
                     loading="lazy"
                     onError={(e) => {
-                      // Prevent infinite loops by checking if we're already showing default
-                      if (e.target.src !== window.location.origin + "/default-avatar.png") {
+                      if (
+                        e.target.src !==
+                        window.location.origin + "/default-avatar.png"
+                      ) {
                         e.target.src = "/default-avatar.png";
                       }
                     }}
                   />
                 </div>
                 <p className="text-xs mt-1 truncate w-16 text-center">
-                  {user.username}
+                  {user.name}
                 </p>
               </div>
             ))}
+
         </div>
 
         {/* Feed */}

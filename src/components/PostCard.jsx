@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 export default function PostCard({ post, user }) {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(
-    Math.floor(Math.random() * 100) + 1
+   0
   );
   const navigate = useNavigate(); // Hook to navigate programmatically
 
@@ -14,7 +14,7 @@ export default function PostCard({ post, user }) {
     setLiked(!liked);
     setLikes(liked ? likes - 1 : likes + 1);
   };
-
+ 
   // Detect video by extension
   const isVideo = post.image?.match(/\.(mp4|webm|mov|avi)$/i);
 
@@ -33,7 +33,7 @@ export default function PostCard({ post, user }) {
         >
           <img
             src={user?.avatar || "https://i.pravatar.cc/150?img=3"}
-            alt={user?.username}
+            alt={user?.name}
             className="w-full h-full object-cover"
           />
         </div>
@@ -42,7 +42,7 @@ export default function PostCard({ post, user }) {
           className="font-semibold text-sm cursor-pointer"
           onClick={() => handleUserProfileClick(user._id)} // Navigate to user's profile on username click
         >
-          {user?.username}
+          {user?.name}
         </p>
       </div>
 
@@ -88,14 +88,14 @@ export default function PostCard({ post, user }) {
       {/* Caption */}
       <div className="px-3 py-2">
         <p className="text-sm">
-          <span className="font-semibold mr-1">{user?.username}</span>
+          <span className="font-semibold mr-1">{user?.name}</span>
           {post.caption}
         </p>
       </div>
 
       {/* Time */}
       <div className="px-3 pb-3">
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500">   
           {new Date(post.createdAt).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit",

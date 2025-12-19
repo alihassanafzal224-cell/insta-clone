@@ -3,6 +3,7 @@ import HomePage from "../pages/HomePage"
 import Post from "../pages/Post"
 import Profile from "../pages/Profile"
 import SearchPage from "../pages/SearchPage"
+import EditProfile from "../components/EditProfile"
 
 export default function loginLayOut() {
 
@@ -13,6 +14,7 @@ export default function loginLayOut() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profile/:userId" element={<Profile />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="*" element={<Navigate to="/" />} />
     </>
     return (
@@ -21,4 +23,3 @@ export default function loginLayOut() {
         </Routes>
     )
 }
-

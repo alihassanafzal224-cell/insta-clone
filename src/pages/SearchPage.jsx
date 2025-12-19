@@ -36,7 +36,7 @@ export default function SearchPage() {
   }, [query]);
 
   const handleUserClick = (user) => {
-    if (user._id === loggedInUser?.id) {
+    if (user._id === loggedInUser?._id) {
       navigate("/profile");
     } else {
       navigate(`/profile/${user._id}`);
@@ -71,7 +71,7 @@ export default function SearchPage() {
                 >
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-pink-500">
                     <img
-                      src={user.avatar || "https://i.pravatar.cc/150?img=3"}
+                      src={user.avatar || "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2264922221.jpg"}
                       alt={user.username}
                       className="w-full h-full object-cover"
                     />

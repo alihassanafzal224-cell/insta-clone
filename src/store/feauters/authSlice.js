@@ -98,6 +98,24 @@ export const fetchFollowing = createAsyncThunk(
   }
 );
 
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const res = await fetch("http://localhost:8000/api/users/me", {
+        method: "PUT",
+        credentials: "include",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Update failed");
+      return await res.json();
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+
 /* -------------------- Initial State -------------------- */
 
 let savedUser = null;
@@ -193,12 +211,15 @@ export const authSlice = createSlice({
         }
         localStorage.setItem("user", JSON.stringify(loggedInUser));
       })
-
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+        localStorage.setItem("user", JSON.stringify(state.user));
+      })
       // Fetch followers list
       .addCase(fetchFollowers.fulfilled, (state, action) => { state.followersList = action.payload; })
-      // Fetch following list
-      .addCase(fetchFollowing.fulfilled, (state, action) => { state.followingList = action.payload; });
-  },
+    // Fetch following list
+    .addCase(fetchFollowing.fulfilled, (state, action) => { state.followingList = action.payload; });
+},
 });
 
 export const { logout } = authSlice.actions;

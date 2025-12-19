@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import Footer from "../components/Footer";
 import PostCard from "../components/PostCard";
 import ProfileSkeleton from "../components/ProfileSkeleton";
+import { Link } from "react-router-dom";
 import {
   fetchUserPosts,
   fetchPostsByUserId,
@@ -32,7 +33,7 @@ export default function Profile() {
   const isOwnProfile = !userId || userId === loggedInUser?._id;
   const user = isOwnProfile ? loggedInUser : profileUser;
   const loggedInId = loggedInUser?._id;
-
+   console.log(user)
   const isFollowing = !isOwnProfile && user?.followers?.includes(loggedInId);
 
   // Fetch profile and posts when userId or logged-in user changes
@@ -112,9 +113,11 @@ export default function Profile() {
               )}
 
               {isOwnProfile && (
-                <button className="mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm hover:bg-gray-100 transition">
-                  Edit Profile
-                </button>
+                <Link to="/edit-profile">
+                  <button className="px-4 py-1 border rounded">Edit Profile</button>
+                </Link>
+
+
               )}
             </div>
 
@@ -152,7 +155,7 @@ export default function Profile() {
         {userPosts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {userPosts.map((post) => (
-              <PostCard key={post._id} post={post} user={user._id} />
+              <PostCard key={post._id} post={post} user={user} />
             ))}
           </div>
         ) : (
