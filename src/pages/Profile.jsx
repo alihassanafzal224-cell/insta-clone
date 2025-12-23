@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import Footer from "../components/Footer";
 import PostCard from "../components/PostCard";
+import FollowModel from "../components/FollowModel"
 import ProfileSkeleton from "../components/ProfileSkeleton";
 import { Link } from "react-router-dom";
 import {
@@ -33,26 +34,35 @@ export default function Profile() {
   const isOwnProfile = !userId || userId === loggedInUser?._id;
   const user = isOwnProfile ? loggedInUser : profileUser;
   const loggedInId = loggedInUser?._id;
-   console.log(user)
+  console.log(user)
   const isFollowing = !isOwnProfile && user?.followers?.includes(loggedInId);
 
   // Fetch profile and posts when userId or logged-in user changes
   useEffect(() => {
-    const idToFetch = isOwnProfile ? loggedInUser?._id : userId;
+  const idToFetch = isOwnProfile ? loggedInUser?._id : userId;
 
-    if (idToFetch) {
-      if (isOwnProfile) {
-        console.log("Own profile", isOwnProfile)
-        dispatch(fetchUserPosts());
-      } else {
-        console.log('not own profiles')
-        dispatch(fetchUserById(idToFetch));
-        dispatch(fetchPostsByUserId(idToFetch));
-        dispatch(fetchFollowers(idToFetch));
-        dispatch(fetchFollowing(idToFetch));
-      }
-    }
-  }, []);
+  if (!idToFetch) return;
+
+  if (isOwnProfile) {
+    dispatch(fetchUserPosts());
+  } else {
+    dispatch(fetchUserById(idToFetch));
+    dispatch(fetchPostsByUserId(idToFetch));
+  }
+}, [userId, loggedInUser?._id]);
+
+  const openFollowers = () => {
+    const id = isOwnProfile ? loggedInUser?._id : userId;
+    if (id) dispatch(fetchFollowers(id));
+    setShowFollowersModal(true);
+  };
+
+  const openFollowing = () => {
+    const id = isOwnProfile ? loggedInUser?._id : userId;
+    if (id) dispatch(fetchFollowing(id));
+    setShowFollowingModal(true);
+  };
+
 
   // Handle follow/unfollow
   const handleFollow = async () => {
@@ -128,18 +138,19 @@ export default function Profile() {
               </div>
 
               <p
-                onClick={() => setShowFollowersModal(true)}
+                onClick={openFollowers}
                 className="cursor-pointer font-semibold"
               >
                 {user.followers?.length || 0} followers
               </p>
 
               <p
-                onClick={() => setShowFollowingModal(true)}
+                onClick={openFollowing}
                 className="cursor-pointer font-semibold"
               >
                 {user.following?.length || 0} following
               </p>
+
             </div>
 
             <div className="text-sm text-gray-700">
@@ -155,55 +166,39 @@ export default function Profile() {
         {userPosts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
             {userPosts.map((post) => (
-              <PostCard key={post._id} post={post} user={user} />
+              <PostCard key={post._id} post={post} user={post.user} />
             ))}
           </div>
         ) : (
           <p className="text-center text-gray-500 mt-6">No posts yet.</p>
         )}
-      </main>
 
-      <Footer />
+
+
+      </main>
+      <div className="h-15">
+        <Footer />
+      </div>
+
 
       {/* Followers Modal */}
       {showFollowersModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-          <div className="bg-white p-4 rounded w-80 max-h-[80vh] overflow-auto">
-            <h2 className="font-bold mb-2">Followers</h2>
-            {followersList.map((f) => (
-              <p key={f._id} className="border-b py-1">
-                {f.name}
-              </p>
-            ))}
-            <button
-              onClick={() => setShowFollowersModal(false)}
-              className="mt-2 px-4 py-1 border rounded"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <FollowModel
+          title="Followers"
+          users={followersList}
+          onClose={() => setShowFollowersModal(false)}
+        />
       )}
 
       {/* Following Modal */}
       {showFollowingModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
-          <div className="bg-white p-4 rounded w-80 max-h-[80vh] overflow-auto">
-            <h2 className="font-bold mb-2">Following</h2>
-            {followingList.map((f) => (
-              <p key={f._id} className="border-b py-1">
-                {f.name}
-              </p>
-            ))}
-            <button
-              onClick={() => setShowFollowingModal(false)}
-              className="mt-2 px-4 py-1 border rounded"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <FollowModel
+          title="Following"
+          users={followingList}
+          onClose={() => setShowFollowingModal(false)}
+        />
       )}
+
     </div>
   );
 }

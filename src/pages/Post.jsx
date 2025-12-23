@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ImagePlus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { createPost } from "../store/feauters/postSlice";
+import Footer from "../components/Footer";
 
 export default function Post() {
   const navigate = useNavigate();
@@ -112,6 +113,9 @@ export default function Post() {
           {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </form>
       </div>
+       <div className="h-15">
+              <Footer />
+          </div>
     </div>
   );
 }

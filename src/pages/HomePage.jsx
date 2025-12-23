@@ -20,6 +20,7 @@ export default function HomePage() {
       <Navbar />
 
       <div className="pt-16">
+        
         {/* Stories / Users */}
         <div className="bg-white border-b border-gray-300 py-3 px-4 overflow-x-auto flex space-x-4">
           {posts
@@ -33,7 +34,7 @@ export default function HomePage() {
                 key={user._id} // now guaranteed
                 className="flex flex-col items-center cursor-pointer"
               >
-                <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-gray-300 mb-4 md:mb-0">
+                <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-300 mb-4 md:mb-0">
                   <img
                     src={user.avatar || "/default-avatar.png"}
                     alt={`${user.name || "User"}'s avatar`}
@@ -58,7 +59,7 @@ export default function HomePage() {
         </div>
 
         {/* Feed */}
-        <main className="pt-4 max-w-4xl mx-auto w-full flex-1 px-2">
+        <main className="pt-4 max-w-xl mx-auto w-full flex-1 px-2">
           {loading === "loading" &&
             Array.from({ length: 3 }).map((_, i) => (
               <PostCardSkeleton key={i} />
@@ -66,7 +67,7 @@ export default function HomePage() {
 
           {posts.length > 0 &&
             posts.map((post) => (
-              <PostCard key={post._id} post={post} user={user} />
+              <PostCard key={post._id} post={post} user={post.user} />
             ))}
 
           {loading !== "loading" && posts.length === 0 && (
@@ -77,7 +78,9 @@ export default function HomePage() {
         </main>
       </div>
 
-      <Footer />
+    <div className="h-15">
+        <Footer />
+    </div>
     </div>
   );
 }

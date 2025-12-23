@@ -96,7 +96,7 @@ export default function SearchPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4 px-6">
                 {posts.map((post) => (
-                  <PostCard key={post._id} post={post} user={loggedInUser} />
+                  <PostCard key={post._id} post={post} user={post.user} />
                 ))}
               </div>
             )}
@@ -107,7 +107,9 @@ export default function SearchPage() {
         )}
       </div>
 
-      <Footer />
+     <div className="h-15">
+            <Footer />
+        </div>
     </div>
   );
 }
