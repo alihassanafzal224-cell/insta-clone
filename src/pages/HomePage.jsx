@@ -6,6 +6,7 @@ import PostCardSkeleton from "../components/PostCardSkeleton";
 import PostCard from "../components/PostCard";
 import { fetchPosts } from "../store/feauters/postSlice";
 
+
 export default function HomePage() {
   const dispatch = useDispatch();
   const { posts, loading } = useSelector((state) => state.post);
