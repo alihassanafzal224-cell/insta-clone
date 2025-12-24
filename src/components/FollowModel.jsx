@@ -1,4 +1,13 @@
+import { useNavigate } from "react-router-dom";
+
 export default function FollowModal({ title, users, onClose }) {
+  const navigate = useNavigate();
+
+  const handleUserClick = (userId) => {
+    navigate(`/profile/${userId}`);
+    onClose(); // Close the modal after navigating
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-gray-300 bg-opacity-80 flex items-center justify-center">
       <div className="bg-white w-100 max-w-[90%] rounded-xl shadow-lg overflow-hidden">
@@ -21,16 +30,15 @@ export default function FollowModal({ title, users, onClose }) {
           {users.map((u) => (
             <div
               key={u._id}
-              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+              className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer"
+              onClick={() => handleUserClick(u._id)}
             >
               <div className="flex items-center gap-3">
                 <img
                   src={u.avatar || "/default-avatar.png"}
                   alt={u.username}
                   className="w-10 h-10 rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.src = "/default-avatar.png";
-                  }}
+                  onError={(e) => { e.target.src = "/default-avatar.png"; }}
                 />
                 <div>
                   <p className="text-sm font-semibold">{u.username}</p>

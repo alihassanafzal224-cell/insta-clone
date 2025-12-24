@@ -32,21 +32,20 @@ export default function HomePage() {
   useEffect(() => {
     dispatch(fetchPosts());
     if (user?._id) {
-      dispatch(fetchStatusesByUserId(user._id)); // own + followed
-      dispatch(fetchAllStatuses()); // suggestions
+      dispatch(fetchStatusesByUserId(user._id));
+      dispatch(fetchAllStatuses());
     }
   }, [dispatch, user?._id]);
 
   /* -------------------- UPLOAD STATUS -------------------- */
-  const handleStatusUpload = async () => {
-    if (!statusFile) return;
+  const handleStatusUpload = async (file) => {
+    if (!file) return;
     const formData = new FormData();
-    formData.append("media", statusFile);
+    formData.append("media", file);
 
     await dispatch(createStatus(formData));
     setStatusFile(null);
 
-    // Refresh statuses
     dispatch(fetchStatusesByUserId(user._id));
     dispatch(fetchAllStatuses());
   };
@@ -71,9 +70,9 @@ export default function HomePage() {
 
   /* -------------------- VIEW STATUS PAGE -------------------- */
   const handleViewStatusPage = (status) => {
-    const userStatuses = statuses.filter((s) => s.user._id === status.user._id);
-    const index = userStatuses.findIndex((s) => s._id === status._id);
-    setClickedUserStatuses(userStatuses);
+    // Show statuses in the order displayed on homepage
+    const index = orderedStatuses.findIndex((s) => s._id === status._id);
+    setClickedUserStatuses(orderedStatuses);
     setStartIndex(index);
     setShowStatusPage(true);
   };
@@ -120,7 +119,7 @@ export default function HomePage() {
 
             {statusFile && (
               <button
-                onClick={handleStatusUpload}
+                onClick={() => handleStatusUpload(statusFile)}
                 className="text-xs mt-1 text-blue-500 font-semibold"
               >
                 Upload
