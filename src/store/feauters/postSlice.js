@@ -99,6 +99,42 @@ export const fetchPostsByUserId = createAsyncThunk(
     }
   }
 );
+// LIKE POST
+export const likePost = createAsyncThunk(
+  "posts/like",
+  async (postId, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/posts/like/${postId}`, {
+        method: "PUT",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to like post");
+      return { postId, ...await res.json() };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+// ADD COMMENT
+export const addCommentToPost = createAsyncThunk(
+  "posts/comment",
+  async ({ postId, text }, { rejectWithValue }) => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/posts/comment/${postId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to add comment");
+      return { postId, comments: await res.json() };
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
 
 
 // INITIAL STATE
@@ -168,7 +204,20 @@ const postSlice = createSlice({
       .addCase(fetchPostsByUserId.rejected, (state, action) => {
         state.userPostsLoading = "failed";
         state.userPostsError = action.payload;
+      })
+      .addCase(likePost.fulfilled, (state, action) => {
+        const { postId, likes, liked } = action.payload;
+        state.posts = state.posts.map(post =>
+          post._id === postId ? { ...post, likes: Array(likes).fill(null) } : post
+        );
+      })
+      .addCase(addCommentToPost.fulfilled, (state, action) => {
+        const { postId, comments } = action.payload;
+        state.posts = state.posts.map(post =>
+          post._id === postId ? { ...post, comments } : post
+        );
       });
+
   },
 });
 
