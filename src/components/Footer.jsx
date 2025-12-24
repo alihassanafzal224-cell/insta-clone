@@ -7,7 +7,15 @@ export default function Footer() {
   const location = useLocation();
   const loggedInUser = useSelector((state) => state.auth.user);
 
-  const isActive = (path) => location.pathname.startsWith(path) ? "text-black" : "text-gray-500";
+  const isActive = (path) => {
+  if (path === "/") {
+    return location.pathname === "/" ? "text-black" : "text-gray-500";
+  }
+  return location.pathname.startsWith(path)
+    ? "text-black"
+    : "text-gray-500";
+};
+
 
   const handleProfileClick = () => {
     if (loggedInUser?._id) {
