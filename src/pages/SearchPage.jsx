@@ -12,7 +12,7 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const loggedInUser = useSelector((state) => state.auth.user);
   const { posts, loading: postsLoading } = useSelector((state) => state.post);
-
+console.log(users)
   useEffect(() => {
     if (!query.trim()) return setUsers([]);
 
@@ -71,7 +71,7 @@ export default function SearchPage() {
                 >
                   <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-pink-500">
                     <img
-                      src={user.avatar || "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2264922221.jpg"}
+                      src={user.avatar || "/default-avatar.png"}
                       alt={user.username}
                       className="w-full h-full object-cover"
                     />
