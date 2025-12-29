@@ -20,6 +20,7 @@ export default function PostCard({ post, user }) {
   }, [post.likes, user?._id]);
 
   const toggleLike = () => {
+    if (!post._id) return;
     dispatch(likePost(post._id)).then((res) => {
       if (res.payload) {
         setLiked(res.payload.liked);
@@ -29,12 +30,13 @@ export default function PostCard({ post, user }) {
   };
 
   const handleAddComment = () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || !post._id) return;
     dispatch(addCommentToPost({ postId: post._id, text: commentText }));
     setCommentText("");
   };
 
   const handleUserProfileClick = (userId) => {
+    if (!userId) return;
     navigate(`/profile/${userId}`);
   };
 
@@ -46,19 +48,19 @@ export default function PostCard({ post, user }) {
       <div className="flex items-center p-3">
         <div
           className="w-10 h-10 rounded-full overflow-hidden mr-3 cursor-pointer"
-          onClick={() => handleUserProfileClick(user._id)}
+          onClick={() => handleUserProfileClick(user?._id)}
         >
           <img
             src={user?.avatar || "https://i.pravatar.cc/150?img=3"}
-            alt={user?.name}
+            alt={user?.name || "User"}
             className="w-full h-full object-cover"
           />
         </div>
         <p
           className="font-semibold text-sm cursor-pointer"
-          onClick={() => handleUserProfileClick(user._id)}
+          onClick={() => handleUserProfileClick(user?._id)}
         >
-          {user?.name}
+          {user?.name || "Unknown"}
         </p>
       </div>
 
@@ -77,7 +79,7 @@ export default function PostCard({ post, user }) {
         ) : (
           <img
             src={post.image}
-            alt={post.caption}
+            alt={post.caption || "Post"}
             className="w-full aspect-square object-cover"
           />
         )}
@@ -107,7 +109,7 @@ export default function PostCard({ post, user }) {
       {/* Caption */}
       <div className="px-3 py-2">
         <p className="text-sm">
-          <span className="font-semibold mr-1">{user?.name}</span>
+          <span className="font-semibold mr-1">{user?.name || "Unknown"}</span>
           {post.caption}
         </p>
       </div>
@@ -139,10 +141,27 @@ export default function PostCard({ post, user }) {
             <div className="max-h-80 overflow-y-auto px-4 py-2">
               {post.comments?.length ? (
                 post.comments.map((c) => (
-                  <p key={c._id} className="text-sm mb-1">
-                    <span className="font-semibold mr-1">{c.user.name}</span>
-                    {c.text}
-                  </p>
+                  <div key={c._id} className="flex items-center mb-2">
+                    <div
+                      className="w-7 h-7 rounded-full overflow-hidden mr-2 cursor-pointer"
+                      onClick={() => handleUserProfileClick(c.user?._id)}
+                    >
+                      <img
+                        src={c.user?.avatar || "https://i.pravatar.cc/150?img=3"}
+                        alt={c.user?.name || "User"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="text-sm">
+                      <span
+                        className="font-semibold mr-1 cursor-pointer"
+                        onClick={() => handleUserProfileClick(c.user?._id)}
+                      >
+                        {c.user?.name || "Unknown"}
+                      </span>
+                      {c.text}
+                    </p>
+                  </div>
                 ))
               ) : (
                 <p className="text-gray-400 text-sm">No comments yet</p>

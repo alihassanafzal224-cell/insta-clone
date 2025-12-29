@@ -211,12 +211,13 @@ const postSlice = createSlice({
           post._id === postId ? { ...post, likes: Array(likes).fill(null) } : post
         );
       })
-      .addCase(addCommentToPost.fulfilled, (state, action) => {
-        const { postId, comments } = action.payload;
-        state.posts = state.posts.map(post =>
-          post._id === postId ? { ...post, comments } : post
-        );
-      });
+     .addCase(addCommentToPost.fulfilled, (state, action) => {
+  const { postId, comments } = action.payload;
+  state.posts = state.posts.map(post =>
+    post._id === postId ? { ...post, comments } : post
+  );
+});
+
 
   },
 });
