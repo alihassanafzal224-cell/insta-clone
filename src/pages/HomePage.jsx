@@ -17,10 +17,9 @@ import {
 
 export default function HomePage() {
   const dispatch = useDispatch();
+
   const { posts, loading } = useSelector((state) => state.post);
-  const { statuses, loading: statusLoading } = useSelector(
-    (state) => state.status
-  );
+  const { statuses, loading: statusLoading } = useSelector((state) => state.status);
   const user = useSelector((state) => state.auth.user);
 
   const [statusFile, setStatusFile] = useState(null);
@@ -40,6 +39,7 @@ export default function HomePage() {
   /* -------------------- UPLOAD STATUS -------------------- */
   const handleStatusUpload = async (file) => {
     if (!file) return;
+
     const formData = new FormData();
     formData.append("media", file);
 
@@ -68,33 +68,46 @@ export default function HomePage() {
     });
   };
 
+  /* -------------------- GROUP STATUSES BY USER -------------------- */
+  const groupedStatuses = useMemo(() => {
+    if (!user?._id) return [];
+
+    const map = {};
+
+    statuses.forEach((status) => {
+      const userId = status.user._id;
+      if (!map[userId]) map[userId] = [];
+      map[userId].push(status);
+    });
+
+    // sort each user's statuses (old → new)
+    Object.values(map).forEach((arr) =>
+      arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    );
+
+    const followedIds = user.following || [];
+
+    const my = [];
+    const followed = [];
+    const others = [];
+
+    Object.values(map).forEach((userStatuses) => {
+      const ownerId = userStatuses[0].user._id;
+
+      if (ownerId === user._id) my.push(userStatuses);
+      else if (followedIds.includes(ownerId)) followed.push(userStatuses);
+      else others.push(userStatuses);
+    });
+
+    return [...my, ...followed, ...others];
+  }, [statuses, user]);
+
   /* -------------------- VIEW STATUS PAGE -------------------- */
-  const handleViewStatusPage = (status) => {
-    // Show statuses in the order displayed on homepage
-    const index = orderedStatuses.findIndex((s) => s._id === status._id);
-    setClickedUserStatuses(orderedStatuses);
+  const handleViewStatusPage = (userStatuses, index = 0) => {
+    setClickedUserStatuses(userStatuses);
     setStartIndex(index);
     setShowStatusPage(true);
   };
-
-  /* -------------------- ORDER STATUSES -------------------- */
-  const orderedStatuses = useMemo(() => {
-    if (!user?._id) return [];
-    const uniqueByUser = Array.from(
-      new Map(statuses.map((s) => [s.user._id, s])).values()
-    );
-
-    const myStatus = uniqueByUser.filter((s) => s.user._id === user._id);
-    const followedIds = user.following || [];
-    const followedStatuses = uniqueByUser.filter(
-      (s) => s.user._id !== user._id && followedIds.includes(s.user._id)
-    );
-    const suggestedStatuses = uniqueByUser.filter(
-      (s) => s.user._id !== user._id && !followedIds.includes(s.user._id)
-    );
-
-    return [...myStatus, ...followedStatuses, ...suggestedStatuses];
-  }, [statuses, user]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -129,50 +142,59 @@ export default function HomePage() {
             <p className="text-xs mt-1 truncate w-16 text-center">Your Status</p>
           </div>
 
-          {/* Status List */}
+          {/* Status Avatars */}
           {statusLoading === "loading" ? (
             <p className="text-sm text-gray-500">Loading...</p>
           ) : (
-            orderedStatuses.map((status) => (
-              <div
-                key={status._id}
-                className="flex flex-col items-center relative cursor-pointer"
-              >
+            groupedStatuses.map((userStatuses) => {
+              const firstStatus = userStatuses[0];
+              const isOwn = firstStatus.user._id === user._id;
+
+              return (
                 <div
-                  className="w-20 h-20 rounded-full overflow-hidden border-2 border-pink-500"
-                  onClick={() => handleViewStatusPage(status)}
+                  key={firstStatus.user._id}
+                  className="flex flex-col items-center relative cursor-pointer"
                 >
-                  <img
-                    src={status.user.avatar || "/default-avatar.png"}
-                    alt={status.user.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {status.user._id === user._id && (
-                  <button
-                    onClick={() => handleDeleteStatus(status._id)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                  <div
+                    className="w-20 h-20 rounded-full overflow-hidden border-2 border-pink-500"
+                    onClick={() => handleViewStatusPage(userStatuses, 0)}
                   >
-                    ×
-                  </button>
-                )}
+                    <img
+                      src={firstStatus.user.avatar || "/default-avatar.png"}
+                      alt={firstStatus.user.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
 
-                <p className="text-xs mt-1 truncate w-16 text-center">
-                  {status.user.name}
-                </p>
-              </div>
-            ))
+                  {isOwn && (
+                    <button
+                      onClick={() => handleDeleteStatus(firstStatus._id)}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                    >
+                      ×
+                    </button>
+                  )}
+
+                  <p className="text-xs mt-1 truncate w-16 text-center">
+                    {firstStatus.user.name}
+                  </p>
+                </div>
+              );
+            })
           )}
         </div>
 
         {/* ==================== FEED ==================== */}
         <main className="pt-4 max-w-xl mx-auto w-full flex-1 px-2">
           {loading === "loading" &&
-            Array.from({ length: 3 }).map((_, i) => <PostCardSkeleton key={i} />)}
+            Array.from({ length: 3 }).map((_, i) => (
+              <PostCardSkeleton key={i} />
+            ))}
 
           {posts.length > 0 &&
-            posts.map((post) => <PostCard key={post._id} post={post} user={post.user} />)}
+            posts.map((post) => (
+              <PostCard key={post._id} post={post} user={post.user} />
+            ))}
 
           {loading !== "loading" && posts.length === 0 && (
             <p className="text-center text-gray-500 mt-6">No posts yet.</p>
