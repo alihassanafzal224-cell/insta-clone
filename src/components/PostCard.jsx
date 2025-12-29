@@ -1,26 +1,31 @@
 import { Heart, MessageCircle, Send, Bookmark, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { likePost, addCommentToPost } from "../store/feauters/postSlice";
 
 export default function PostCard({ post, user }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const currentUser = useSelector((state) => state.auth.user);
+  const currentUserId = currentUser?._id;
+
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes?.length || 0);
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
 
+  /* -------------------- SYNC LIKE STATE -------------------- */
   useEffect(() => {
-    const userId = user?._id;
-    setLiked(post.likes?.includes(userId));
+    setLiked(post.likes?.includes(currentUserId));
     setLikesCount(post.likes?.length || 0);
-  }, [post.likes, user?._id]);
+  }, [post.likes, currentUserId]);
 
+  /* -------------------- TOGGLE LIKE -------------------- */
   const toggleLike = () => {
     if (!post._id) return;
+
     dispatch(likePost(post._id)).then((res) => {
       if (res.payload) {
         setLiked(res.payload.liked);
@@ -29,12 +34,15 @@ export default function PostCard({ post, user }) {
     });
   };
 
+  /* -------------------- ADD COMMENT -------------------- */
   const handleAddComment = () => {
     if (!commentText.trim() || !post._id) return;
+
     dispatch(addCommentToPost({ postId: post._id, text: commentText }));
     setCommentText("");
   };
 
+  /* -------------------- NAVIGATE PROFILE -------------------- */
   const handleUserProfileClick = (userId) => {
     if (!userId) return;
     navigate(`/profile/${userId}`);
@@ -51,7 +59,7 @@ export default function PostCard({ post, user }) {
           onClick={() => handleUserProfileClick(user?._id)}
         >
           <img
-            src={user?.avatar || "https://i.pravatar.cc/150?img=3"}
+            src={user?.avatar || "/default-avatar.png"}
             alt={user?.name || "User"}
             className="w-full h-full object-cover"
           />
@@ -71,7 +79,6 @@ export default function PostCard({ post, user }) {
             src={post.image}
             className="w-full aspect-square object-cover"
             controls
-            autoPlay
             loop
             muted
             playsInline
@@ -89,12 +96,14 @@ export default function PostCard({ post, user }) {
       <div className="flex justify-between items-center px-3 py-2">
         <div className="flex space-x-4">
           <Heart
-            className={`w-6 h-6 cursor-pointer ${liked ? "text-red-500" : ""}`}
+            className={`w-6 h-6 cursor-pointer transition ${
+              liked ? "text-red-500 fill-red-500" : ""
+            }`}
             onClick={toggleLike}
           />
           <MessageCircle
             className="w-6 h-6 cursor-pointer"
-            onClick={() => setShowComments(!showComments)}
+            onClick={() => setShowComments(true)}
           />
           <Send className="w-6 h-6 cursor-pointer" />
         </div>
@@ -109,7 +118,7 @@ export default function PostCard({ post, user }) {
       {/* Caption */}
       <div className="px-3 py-2">
         <p className="text-sm">
-          <span className="font-semibold mr-1">{user?.name || "Unknown"}</span>
+          <span className="font-semibold mr-1">{user?.name}</span>
           {post.caption}
         </p>
       </div>
@@ -128,7 +137,6 @@ export default function PostCard({ post, user }) {
       {showComments && (
         <div className="fixed inset-0 z-50 bg-gray-300 bg-opacity-60 flex justify-center items-start pt-20">
           <div className="bg-white w-full max-w-md rounded-md shadow-lg overflow-hidden">
-            {/* Header */}
             <div className="flex justify-between items-center px-4 py-2 border-b">
               <p className="font-semibold">Comments</p>
               <X
@@ -137,7 +145,6 @@ export default function PostCard({ post, user }) {
               />
             </div>
 
-            {/* Comments List */}
             <div className="max-h-80 overflow-y-auto px-4 py-2">
               {post.comments?.length ? (
                 post.comments.map((c) => (
@@ -147,8 +154,8 @@ export default function PostCard({ post, user }) {
                       onClick={() => handleUserProfileClick(c.user?._id)}
                     >
                       <img
-                        src={c.user?.avatar || "https://i.pravatar.cc/150?img=3"}
-                        alt={c.user?.name || "User"}
+                        src={c.user?.avatar || "/default-avatar.png"}
+                        alt={c.user?.name}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -157,7 +164,7 @@ export default function PostCard({ post, user }) {
                         className="font-semibold mr-1 cursor-pointer"
                         onClick={() => handleUserProfileClick(c.user?._id)}
                       >
-                        {c.user?.name || "Unknown"}
+                        {c.user?.name}
                       </span>
                       {c.text}
                     </p>
@@ -168,7 +175,6 @@ export default function PostCard({ post, user }) {
               )}
             </div>
 
-            {/* Add Comment */}
             <div className="flex border-t px-4 py-2">
               <input
                 type="text"
