@@ -245,6 +245,7 @@ export default function Post() {
           </div>
         )}
 
+       
         {fileType === "video" && filePreview && (
           <div>
             <video
@@ -265,7 +266,7 @@ export default function Post() {
                 className="w-full"
               />
             </div>
-            <div className="mb-4">
+            <div className="mb-2">
               <label>End: {videoEnd.toFixed(1)}s</label>
               <input
                 type="range"
@@ -276,6 +277,22 @@ export default function Post() {
                 onChange={(e) => setVideoEnd(Number(e.target.value))}
                 className="w-full"
               />
+            </div>
+
+            {/* Apply Trim Button */}
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={() => {
+                  if (videoStart >= videoEnd) {
+                    alert("Start time must be less than end time");
+                    return;
+                  }
+                  alert(`Trim applied: ${videoStart.toFixed(1)}s to ${videoEnd.toFixed(1)}s`);
+                }}
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+              >
+                Apply Trim
+              </button>
             </div>
           </div>
         )}
