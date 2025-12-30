@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux"
-import { logout } from "../store/feauters/authSlice";
+import { logout, logoutUserAsync } from "../store/feauters/authSlice";
 import { useDispatch } from "react-redux";
 
 export const Navbar = () => {
@@ -18,7 +18,7 @@ export const Navbar = () => {
               {user?.username || "User"}
             </span>
             <button
-              onClick={() => dispatch(logout())}
+              onClick={() => dispatch(logoutUserAsync())}
               className="text-sm font-semibold text-blue-500"
             >
               Logout

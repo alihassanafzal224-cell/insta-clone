@@ -106,15 +106,16 @@ export default function Profile() {
 
   /* -------------------- VIEW STATUS PAGE -------------------- */
   const handleViewStatusPage = (status) => {
-    const userStatuses = statuses.filter((s) => s.user._id === status.user._id);
+    const userStatuses = statuses.filter((s) => s.user && s.user._id === status.user._id);
     const index = userStatuses.findIndex((s) => s._id === status._id);
     setClickedUserStatuses(userStatuses);
     setStartIndex(index);
     setShowStatusPage(true);
   };
 
+  /* -------------------- FILTERED STATUSES -------------------- */
   const profileStatuses = useMemo(
-    () => statuses.filter((s) => s.user._id === user?._id),
+    () => statuses.filter((s) => s.user && s.user._id === user?._id),
     [statuses, user]
   );
 
@@ -224,13 +225,13 @@ export default function Profile() {
                   onClick={() => handleViewStatusPage(status)}
                 >
                   <img
-                    src={status.user.avatar || "/default-avatar.png"}
-                    alt={status.user.name}
+                    src={status.user?.avatar || "/default-avatar.png"}
+                    alt={status.user?.name || "User"}
                     className="w-full h-full object-cover"
                   />
                 </div>
 
-                {status.user._id === loggedInUser._id && (
+                {status.user?._id === loggedInUser._id && (
                   <button
                     onClick={() => handleDeleteStatus(status._id)}
                     className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
@@ -239,7 +240,7 @@ export default function Profile() {
                   </button>
                 )}
 
-                <p className="text-xs mt-1 truncate w-16 text-center">{status.user.name}</p>
+                <p className="text-xs mt-1 truncate w-16 text-center">{status.user?.name || "User"}</p>
               </div>
             ))
           )}

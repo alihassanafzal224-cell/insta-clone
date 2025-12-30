@@ -38,8 +38,10 @@ export default function SignUpPage() {
                 value={form.username}
                 onChange={handleChange}
                 required
+                autoComplete="username"
                 className="h-10 px-2 border border-gray-300 rounded-sm bg-gray-50 focus:outline-none"
               />
+
               <input
                 type="email"
                 name="email"
@@ -47,8 +49,10 @@ export default function SignUpPage() {
                 value={form.email}
                 onChange={handleChange}
                 required
+                autoComplete="email"
                 className="h-10 px-2 border border-gray-300 rounded-sm bg-gray-50 focus:outline-none"
               />
+
               <input
                 type="password"
                 name="password"
@@ -56,8 +60,10 @@ export default function SignUpPage() {
                 value={form.password}
                 onChange={handleChange}
                 required
+                autoComplete="new-password"
                 className="h-10 px-2 border border-gray-300 rounded-sm bg-gray-50 focus:outline-none"
               />
+
 
               {error && <p className="text-red-500 text-xs text-center">{error}</p>}
 

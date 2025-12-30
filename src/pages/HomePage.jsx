@@ -14,12 +14,16 @@ import {
   createStatus,
   deleteStatus,
 } from "../store/feauters/statusSlice";
+import { logoutUserAsync} from "../store/feauters/authSlice";
+
 
 export default function HomePage() {
   const dispatch = useDispatch();
 
   const { posts, loading } = useSelector((state) => state.post);
-  const { statuses, loading: statusLoading } = useSelector((state) => state.status);
+  const { statuses, loading: statusLoading } = useSelector(
+    (state) => state.status
+  );
   const user = useSelector((state) => state.auth.user);
 
   const [statusFile, setStatusFile] = useState(null);
@@ -39,7 +43,6 @@ export default function HomePage() {
   /* -------------------- UPLOAD STATUS -------------------- */
   const handleStatusUpload = async (file) => {
     if (!file) return;
-
     const formData = new FormData();
     formData.append("media", file);
 
@@ -73,27 +76,25 @@ export default function HomePage() {
     if (!user?._id) return [];
 
     const map = {};
+    const validStatuses = statuses.filter((status) => status.user);
 
-    statuses.forEach((status) => {
+    validStatuses.forEach((status) => {
       const userId = status.user._id;
       if (!map[userId]) map[userId] = [];
       map[userId].push(status);
     });
 
-    // sort each user's statuses (old → new)
     Object.values(map).forEach((arr) =>
       arr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
     );
 
     const followedIds = user.following || [];
-
     const my = [];
     const followed = [];
     const others = [];
 
     Object.values(map).forEach((userStatuses) => {
       const ownerId = userStatuses[0].user._id;
-
       if (ownerId === user._id) my.push(userStatuses);
       else if (followedIds.includes(ownerId)) followed.push(userStatuses);
       else others.push(userStatuses);
@@ -109,9 +110,22 @@ export default function HomePage() {
     setShowStatusPage(true);
   };
 
+  /* -------------------- LOGOUT -------------------- */
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutUserAsync()).unwrap(); // unwrap ensures errors throw
+      dispatch(logoutUserAsync()); // clear Redux state & localStorage
+      Swal.fire("Logged out", "You have been logged out successfully.", "success");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      Swal.fire("Error", "Logout failed. Please try again.", "error");
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Navbar />
+      <Navbar handleLogout={handleLogout} />
 
       <div className="pt-16">
         {/* ==================== STATUS / STORIES ==================== */}

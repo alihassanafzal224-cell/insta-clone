@@ -114,6 +114,60 @@ export const updateProfile = createAsyncThunk(
     }
   }
 );
+export const forgotPassword = createAsyncThunk(
+  "auth/forgotPassword",
+  async (email, { rejectWithValue }) => {
+    const res = await fetch(
+      "http://localhost:8000/api/users/forgot-password",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) throw data.message;
+    return data;
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async ({ token, password }, { rejectWithValue }) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/users/reset-password/${token}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        return rejectWithValue(data.message);
+      }
+
+      return await res.json();
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+export const logoutUserAsync = createAsyncThunk(
+  "auth/logoutUser",
+  async () => {
+    await fetch("http://localhost:8000/api/users/logout", {
+      method: "POST",
+      credentials: "include", // important for sending/clearing cookie
+    });
+  }
+);
+
+
 
 
 /* -------------------- Initial State -------------------- */
@@ -142,16 +196,6 @@ export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.profileUser = null;
-      state.followersList = [];
-      state.followingList = [];
-      state.loading = "idle";
-      state.profileUserLoading = "idle";
-      state.error = null;
-      localStorage.removeItem("user");
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -215,11 +259,20 @@ export const authSlice = createSlice({
         state.user = action.payload.user;
         localStorage.setItem("user", JSON.stringify(state.user));
       })
+      .addCase(forgotPassword.fulfilled, (state, action) => {
+        state.message = action.payload.message;
+      })
+
       // Fetch followers list
       .addCase(fetchFollowers.fulfilled, (state, action) => { state.followersList = action.payload; })
-    // Fetch following list
-    .addCase(fetchFollowing.fulfilled, (state, action) => { state.followingList = action.payload; });
-},
+      // Fetch following list
+      .addCase(fetchFollowing.fulfilled, (state, action) => { state.followingList = action.payload; }
+    )
+    .addCase(logoutUserAsync.fulfilled, (state) => {
+      state.user = null;
+      localStorage.removeItem("user");
+    });
+  },
 });
 
 export const { logout } = authSlice.actions;

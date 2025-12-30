@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../store/feauters/authSlice";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -23,11 +23,17 @@ export default function Login() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleForgotPassword = () => {
+    navigate("/forgot-password");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-87.5">
         <div className="bg-white border border-gray-300 px-10 py-8 rounded-sm">
-          <h1 className="text-4xl font-semibold text-center mb-8 font-serif">Instagram</h1>
+          <h1 className="text-4xl font-semibold text-center mb-8 font-serif">
+            Instagram
+          </h1>
 
           {emailVerified && (
             <p className="text-green-600 text-center text-sm mb-3">
@@ -45,6 +51,7 @@ export default function Login() {
               required
               className="h-10 px-2 border border-gray-300 rounded-sm bg-gray-50 focus:outline-none"
             />
+
             <input
               type="password"
               name="password"
@@ -55,7 +62,9 @@ export default function Login() {
               className="h-10 px-2 border border-gray-300 rounded-sm bg-gray-50 focus:outline-none"
             />
 
-            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+            {error && (
+              <p className="text-red-500 text-xs text-center">{error}</p>
+            )}
 
             <button
               type="submit"
@@ -72,7 +81,10 @@ export default function Login() {
             <div className="flex-1 h-px bg-gray-300" />
           </div>
 
-          <p className="text-center text-xs text-gray-500 mt-4 cursor-pointer">
+          <p
+            className="text-center text-xs text-gray-500 mt-4 cursor-pointer"
+            onClick={handleForgotPassword}
+          >
             Forgot password?
           </p>
         </div>

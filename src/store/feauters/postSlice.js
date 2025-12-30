@@ -134,6 +134,30 @@ export const addCommentToPost = createAsyncThunk(
     }
   }
 );
+// DELETE POST
+export const deletePost = createAsyncThunk(
+  "posts/delete",
+  async (postId, { rejectWithValue }) => {
+    try {
+      const res = await fetch(
+        `http://localhost:8000/api/posts/delete/${postId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+
+      if (!res.ok) {
+        const data = await res.json();
+        return rejectWithValue(data.message || "Failed to delete post");
+      }
+
+      return { postId };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 
 
@@ -216,6 +240,23 @@ const postSlice = createSlice({
   state.posts = state.posts.map(post =>
     post._id === postId ? { ...post, comments } : post
   );
+})
+// DELETE POST
+.addCase(deletePost.pending, (state) => {
+  state.loading = "loading";
+})
+.addCase(deletePost.fulfilled, (state, action) => {
+  state.loading = "success";
+  state.posts = state.posts.filter(
+    (post) => post._id !== action.payload.postId
+  );
+  state.userPosts = state.userPosts.filter(
+    (post) => post._id !== action.payload.postId
+  );
+})
+.addCase(deletePost.rejected, (state, action) => {
+  state.loading = "failed";
+  state.error = action.payload;
 });
 
 
