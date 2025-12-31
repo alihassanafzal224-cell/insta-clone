@@ -1,11 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-
+import {authFetch} from "../hooks/authFetch"
 /* ASYNC THUNKS */
 export const createStatus = createAsyncThunk(
   "status/createStatus",
   async (formData, { rejectWithValue }) => {
     try {
-      const res = await fetch("http://localhost:8000/api/status/create", {
+      const res = await authFetch("http://localhost:8000/api/status/create", {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -23,7 +23,7 @@ export const fetchStatusesByUserId = createAsyncThunk(
   "status/fetchStatusesByUserId",
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/status/user/${userId}`, {
+      const res = await authFetch(`http://localhost:8000/api/status/user/${userId}`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -39,7 +39,7 @@ export const fetchAllStatuses = createAsyncThunk(
   "status/fetchAllStatuses",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch("http://localhost:8000/api/status", { credentials: "include" });
+      const res = await authFetch("http://localhost:8000/api/status", { credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
       return data;
@@ -53,7 +53,7 @@ export const deleteStatus = createAsyncThunk(
   "status/deleteStatus",
   async (statusId, { rejectWithValue }) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/status/${statusId}`, {
+      const res = await authFetch(`http://localhost:8000/api/status/${statusId}`, {
         method: "DELETE",
         credentials: "include",
       });

@@ -1,11 +1,11 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-
+import {authFetch} from "../hooks/authFetch"
 // CREATE POST
 export const createPost = createAsyncThunk(
   "posts/create",
   async (formData, { rejectWithValue }) => {
     try {
-      const res = await fetch("http://localhost:8000/api/posts/create", {
+      const res = await authFetch("http://localhost:8000/api/posts/create", {
         method: "POST",
         body: formData,
         credentials: "include",
@@ -27,7 +27,7 @@ export const fetchPosts = createAsyncThunk(
   "posts/fetch",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch("http://localhost:8000/api/posts/getposts", {
+      const res = await authFetch("http://localhost:8000/api/posts/getposts", {
         credentials: "include",
       });
 
@@ -47,7 +47,7 @@ export const fetchUserPosts = createAsyncThunk(
   "posts/fetchUser",
   async (_, { rejectWithValue }) => {
     try {
-      const res = await fetch("http://localhost:8000/api/posts/my-posts", {
+      const res = await authFetch("http://localhost:8000/api/posts/my-posts", {
         credentials: "include",
       });
 
@@ -67,7 +67,7 @@ export const updatePost = createAsyncThunk(
   "posts/update",
   async ({ id, formData }, { rejectWithValue }) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/posts/update/${id}`, {
+      const res = await authFetch(`http://localhost:8000/api/posts/update/${id}`, {
         method: "PUT",
         body: formData,
         credentials: "include",
@@ -87,7 +87,7 @@ export const fetchPostsByUserId = createAsyncThunk(
   "posts/fetchByUserId",
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `http://localhost:8000/api/posts/user/${userId}`,
         { credentials: "include" }
       );
@@ -104,7 +104,7 @@ export const likePost = createAsyncThunk(
   "posts/like",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/posts/like/${postId}`, {
+      const res = await authFetch(`http://localhost:8000/api/posts/like/${postId}`, {
         method: "PUT",
         credentials: "include",
       });
@@ -121,7 +121,7 @@ export const addCommentToPost = createAsyncThunk(
   "posts/comment",
   async ({ postId, text }, { rejectWithValue }) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/posts/comment/${postId}`, {
+      const res = await authFetch(`http://localhost:8000/api/posts/comment/${postId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -139,7 +139,7 @@ export const deletePost = createAsyncThunk(
   "posts/delete",
   async (postId, { rejectWithValue }) => {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `http://localhost:8000/api/posts/delete/${postId}`,
         {
           method: "DELETE",

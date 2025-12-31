@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-
+import { authFetch } from "../hooks/authFetch";
 /* -------------------- Thunks -------------------- */
 
 // Register
@@ -33,7 +33,8 @@ export const login = createAsyncThunk(
         credentials: "include",
       });
       if (!res.ok) return rejectWithValue("Invalid credentials");
-      return await res.json();
+      const data = await res.json();
+      return data;
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -45,7 +46,7 @@ export const fetchUserById = createAsyncThunk(
   "auth/fetchUserById",
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await fetch(`http://localhost:8000/api/users/${userId}`, {
+      const res = await authFetch(`http://localhost:8000/api/users/${userId}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch user");
@@ -62,7 +63,7 @@ export const toggleFollow = createAsyncThunk(
   "auth/toggleFollow",
   async (userId, { rejectWithValue }) => {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `http://localhost:8000/api/users/follow/${userId}`,
         { method: "PUT", credentials: "include" }
       );
@@ -78,7 +79,7 @@ export const toggleFollow = createAsyncThunk(
 export const fetchFollowers = createAsyncThunk(
   "auth/fetchFollowers",
   async (userId) => {
-    const res = await fetch(
+    const res = await authFetch(
       `http://localhost:8000/api/users/${userId}/followers`,
       { credentials: "include" }
     );
@@ -90,7 +91,7 @@ export const fetchFollowers = createAsyncThunk(
 export const fetchFollowing = createAsyncThunk(
   "auth/fetchFollowing",
   async (userId) => {
-    const res = await fetch(
+    const res = await authFetch(
       `http://localhost:8000/api/users/${userId}/following`,
       { credentials: "include" }
     );
@@ -102,7 +103,7 @@ export const updateProfile = createAsyncThunk(
   "auth/updateProfile",
   async (formData, { rejectWithValue }) => {
     try {
-      const res = await fetch("http://localhost:8000/api/users/me", {
+      const res = await authFetch("http://localhost:8000/api/users/me", {
         method: "PUT",
         credentials: "include",
         body: formData,
@@ -264,14 +265,19 @@ export const authSlice = createSlice({
       })
 
       // Fetch followers list
-      .addCase(fetchFollowers.fulfilled, (state, action) => { state.followersList = action.payload; })
-      // Fetch following list
-      .addCase(fetchFollowing.fulfilled, (state, action) => { state.followingList = action.payload; }
-    )
-    .addCase(logoutUserAsync.fulfilled, (state) => {
-      state.user = null;
-      localStorage.removeItem("user");
-    });
+      .addCase(fetchFollowers.fulfilled, (state, action) => {
+        console.log("Followers:", action.payload);
+        state.followersList = action.payload;
+      })
+      .addCase(fetchFollowing.fulfilled, (state, action) => {
+        console.log("Following:", action.payload);
+        state.followingList = action.payload;
+      })
+
+      .addCase(logoutUserAsync.fulfilled, (state) => {
+        state.user = null;
+        localStorage.removeItem("user");
+      });
   },
 });
 

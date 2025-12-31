@@ -12,7 +12,7 @@ export default function SearchPage() {
   const navigate = useNavigate();
   const loggedInUser = useSelector((state) => state.auth.user);
   const { posts, loading: postsLoading } = useSelector((state) => state.post);
-console.log(users)
+  
   useEffect(() => {
     if (!query.trim()) return setUsers([]);
 
