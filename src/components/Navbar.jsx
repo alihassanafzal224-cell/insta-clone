@@ -15,7 +15,7 @@ export const Navbar = () => {
 
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium">
-              {user?.username || "User"}
+              {user.username || "User"}
             </span>
             <button
               onClick={() => dispatch(logoutUserAsync())}

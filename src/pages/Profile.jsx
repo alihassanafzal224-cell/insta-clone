@@ -37,6 +37,9 @@ export default function Profile() {
   const { statuses, loading: statusLoading } = useSelector((state) => state.status);
   const followersList = useSelector((state) => state.auth.followersList) || [];
   const followingList = useSelector((state) => state.auth.followingList) || [];
+  console.log(
+    followersList , followingList
+  )
 
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -48,7 +51,12 @@ export default function Profile() {
   const isOwnProfile = !userId || userId === loggedInUser?._id;
   const user = isOwnProfile ? loggedInUser : profileUser;
   const loggedInId = loggedInUser?._id;
-  const isFollowing = !isOwnProfile && user?.followers?.includes(loggedInId);
+  const isFollowing =
+  !isOwnProfile &&
+  user?.followers?.some(
+    (f) => (typeof f === "string" ? f : f._id) === loggedInId
+  );
+
 
   /* -------------------- FETCH DATA -------------------- */
   useEffect(() => {

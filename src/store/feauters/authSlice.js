@@ -248,12 +248,13 @@ export const authSlice = createSlice({
         loggedInUser.following ||= [];
 
         if (following) {
-          if (!profileUser.followers.includes(loggedInId)) profileUser.followers.push(loggedInId);
-          if (!loggedInUser.following.includes(profileId)) loggedInUser.following.push(profileId);
+          profileUser.followers = [...new Set([...profileUser.followers, loggedInId])];
+          loggedInUser.following = [...new Set([...loggedInUser.following, profileId])];
         } else {
-          profileUser.followers = profileUser.followers.filter((id) => id !== loggedInId);
-          loggedInUser.following = loggedInUser.following.filter((id) => id !== profileId);
+          profileUser.followers = profileUser.followers.filter(id => id !== loggedInId);
+          loggedInUser.following = loggedInUser.following.filter(id => id !== profileId);
         }
+
         localStorage.setItem("user", JSON.stringify(loggedInUser));
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
