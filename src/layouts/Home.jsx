@@ -6,6 +6,8 @@ import Post from "../pages/Post";
 import Profile from "../pages/Profile";
 import SearchPage from "../pages/SearchPage";
 import EditProfile from "../components/EditProfile";
+import Messages from "../pages/Messages"
+import ChatWindow from "../components/ChatWindow"
 
 export default function loginLayOut() {
   const user = useSelector((state) => state.auth.user);
@@ -13,7 +15,7 @@ export default function loginLayOut() {
   const route = (
     <>
       {/* Public routes */}
-      <Route path="/" element={user ?<HomePage />:<Navigate to="/login" />} />
+      <Route path="/" element={user ? <HomePage /> : <Navigate to="/login" />} />
       <Route path="/search" element={<SearchPage />} />
 
       {/* Protected routes */}
@@ -37,8 +39,16 @@ export default function loginLayOut() {
         element={user ? <EditProfile /> : <Navigate to="/" />}
       />
 
+      {/* Messages (nested) */}
+      <Route
+        path="/messages"
+        element={user ? <Messages /> : <Navigate to="/login" />}
+      >
+        <Route path=":conversationId" element={<ChatWindow />} />
+      </Route>
+
       {/* Fallback */}
-      <Route path="*" element={user ?<Navigate to="/" />:<Navigate to="/login" />} />
+      <Route path="*" element={user ? <Navigate to="/" /> : <Navigate to="/login" />} />
     </>
   );
 

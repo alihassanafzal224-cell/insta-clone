@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import { createConversation } from "../store/feauters/chatSlice";
+
 import Swal from "sweetalert2";
 import Footer from "../components/Footer";
 import PostCard from "../components/PostCard";
@@ -29,6 +31,8 @@ import {
 export default function Profile() {
   const { userId } = useParams();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
 
   const loggedInUser = useSelector((state) => state.auth.user);
   const profileUser = useSelector((state) => state.auth.profileUser);
@@ -38,7 +42,7 @@ export default function Profile() {
   const followersList = useSelector((state) => state.auth.followersList) || [];
   const followingList = useSelector((state) => state.auth.followingList) || [];
   console.log(
-    followersList , followingList
+    followersList, followingList
   )
 
   const [showFollowersModal, setShowFollowersModal] = useState(false);
@@ -52,10 +56,10 @@ export default function Profile() {
   const user = isOwnProfile ? loggedInUser : profileUser;
   const loggedInId = loggedInUser?._id;
   const isFollowing =
-  !isOwnProfile &&
-  user?.followers?.some(
-    (f) => (typeof f === "string" ? f : f._id) === loggedInId
-  );
+    !isOwnProfile &&
+    user?.followers?.some(
+      (f) => (typeof f === "string" ? f : f._id) === loggedInId
+    );
 
 
   /* -------------------- FETCH DATA -------------------- */
@@ -121,6 +125,17 @@ export default function Profile() {
     setShowStatusPage(true);
   };
 
+  /* -------------------- Messages -------------------- */
+  const handleMessage = async () => {
+    try {
+      const res = await dispatch(createConversation(user._id)).unwrap();
+      navigate(`/messages/${res._id}`);
+    } catch (err) {
+      Swal.fire("Error", err, "error");
+    }
+  };
+
+
   /* -------------------- FILTERED STATUSES -------------------- */
   const profileStatuses = useMemo(
     () => statuses.filter((s) => s.user && s.user._id === user?._id),
@@ -152,13 +167,21 @@ export default function Profile() {
               {!isOwnProfile && (
                 <button
                   onClick={handleFollow}
-                  className={`mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm transition ${
-                    isFollowing ? "bg-gray-200 hover:bg-gray-300" : "bg-blue-500 text-white hover:bg-blue-600"
-                  }`}
+                  className={`mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm transition ${isFollowing ? "bg-gray-200 hover:bg-gray-300" : "bg-blue-500 text-white hover:bg-blue-600"
+                    }`}
                 >
                   {isFollowing ? "Unfollow" : "Follow"}
                 </button>
               )}
+              {!isOwnProfile && (
+                <button
+                  onClick={handleMessage}
+                  className="mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm bg-green-500 text-white hover:bg-green-600"
+                >
+                  Message
+                </button>
+              )}
+
 
               {isOwnProfile && (
                 <Link to="/edit-profile">

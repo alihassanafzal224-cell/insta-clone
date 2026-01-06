@@ -3,11 +3,14 @@ import authSlice from "./feauters/authSlice";
 import postSlice from "./feauters/postSlice";
 import statuses from "./feauters/statusSlice"
 import verifySlice from "./feauters/verifySlice"
+import chatSlice from "./feauters/chatSlice"
+
 export const store = configureStore({
   reducer: {
     auth: authSlice,
     post: postSlice,
     verify:verifySlice,
     status : statuses,
+    chat : chatSlice,
   },
 });
