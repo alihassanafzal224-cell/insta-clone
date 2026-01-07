@@ -101,6 +101,15 @@ const chatSlice = createSlice({
         u => u !== action.payload
       );
     },
+    markMessagesSeen(state, action) {
+      const { conversationId, userId } = action.payload;
+
+      state.messages[conversationId]?.forEach(msg => {
+        if (!msg.seenBy.includes(userId)) {
+          msg.seenBy.push(userId);
+        }
+      });
+    },
   },
   extraReducers: builder => {
     builder
@@ -129,6 +138,7 @@ export const {
   setOnlineUsers,
   addTypingUser,
   removeTypingUser,
+  markMessagesSeen,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
