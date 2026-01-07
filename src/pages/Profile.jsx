@@ -41,9 +41,7 @@ export default function Profile() {
   const { statuses, loading: statusLoading } = useSelector((state) => state.status);
   const followersList = useSelector((state) => state.auth.followersList) || [];
   const followingList = useSelector((state) => state.auth.followingList) || [];
-  console.log(
-    followersList, followingList
-  )
+ 
 
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -93,7 +91,7 @@ export default function Profile() {
     const formData = new FormData();
     formData.append("media", statusFile);
 
-    await dispatch(createStatus(formData));
+    dispatch(createStatus(formData));
     setStatusFile(null);
     dispatch(fetchStatusesByUserId(loggedInUser._id)); // refresh after upload
   };

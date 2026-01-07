@@ -267,11 +267,9 @@ export const authSlice = createSlice({
 
       // Fetch followers list
       .addCase(fetchFollowers.fulfilled, (state, action) => {
-        console.log("Followers:", action.payload);
         state.followersList = action.payload;
       })
       .addCase(fetchFollowing.fulfilled, (state, action) => {
-        console.log("Following:", action.payload);
         state.followingList = action.payload;
       })
 

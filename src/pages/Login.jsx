@@ -1,18 +1,26 @@
-import { useState } from "react";
+import { useState ,useEffect} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { login } from "../store/feauters/authSlice";
 import { useNavigate, useLocation } from "react-router-dom";
+import { socket } from "../socket";
 
 export default function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
-
+const { user } = useSelector((state) => state.auth); 
   const [form, setForm] = useState({ email: "", password: "" });
   const { loading, error } = useSelector((state) => state.auth);
 
   const query = new URLSearchParams(location.search);
   const emailVerified = query.get("verified") === "true";
+  
+useEffect(() => {
+  if (user) {
+    socket.connect(); 
+      navigate("/");
+  }
+},  [user, navigate]);
 
   const handleLogin = (e) => {
     e.preventDefault();

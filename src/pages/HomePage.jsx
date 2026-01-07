@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo} from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Swal from "sweetalert2";
 import { Navbar } from "../components/Navbar";
@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 import PostCardSkeleton from "../components/PostCardSkeleton";
 import PostCard from "../components/PostCard";
 import StatusPage from "../components/StatusPage";
-
+import { socket } from "../socket";
 import { fetchPosts } from "../store/feauters/postSlice";
 import {
   fetchStatusesByUserId,
@@ -112,15 +112,19 @@ export default function HomePage() {
 
   /* -------------------- LOGOUT -------------------- */
   const handleLogout = async () => {
-    try {
-      await dispatch(logoutUserAsync()).unwrap(); // unwrap ensures errors throw
-      dispatch(logoutUserAsync()); // clear Redux state & localStorage
-      Swal.fire("Logged out", "You have been logged out successfully.", "success");
-    } catch (err) {
-      console.error("Logout failed:", err);
-      Swal.fire("Error", "Logout failed. Please try again.", "error");
-    }
-  };
+  try {
+     socket.disconnect();
+    await dispatch(logoutUserAsync()).unwrap();
+
+    Swal.fire("Logged out", "You have been logged out successfully.", "success");
+
+    navigate("/login"); 
+  } catch (err) {
+    console.error("Logout failed:", err);
+    Swal.fire("Error", "Logout failed. Please try again.", "error");
+  }
+};
+
 
 
   return (

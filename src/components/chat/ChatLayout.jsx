@@ -17,6 +17,7 @@ export default function ChatLayout() {
 
   useEffect(() => {
     socket.on("online-users", (users) => {
+      console.log("chatlayout users:" ,users)
       dispatch(setOnlineUsers(users));
     });
 

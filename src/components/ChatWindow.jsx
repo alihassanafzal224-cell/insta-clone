@@ -7,11 +7,14 @@ import MessageBubble from "./chat/MessageBubble";
 
 export default function ChatWindow() {
   const { conversationId } = useParams();
-  console.log(conversationId)
+
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const messages = useSelector((state) => state.chat.messages[conversationId] || []);
-  console.log("messages", messages)
+  const messages = useSelector(
+    (state) => state.chat.messages[conversationId]
+  );
+
+
 
   const [text, setText] = useState("");
 
@@ -48,9 +51,6 @@ export default function ChatWindow() {
     // Send message via socket
     socket.emit("send-message", message);
 
-    // Optimistically add message to Redux
-    dispatch(addMessage({ conversationId, message }));
-
     setText("");
   };
 
@@ -65,13 +65,14 @@ export default function ChatWindow() {
       </div>
 
       <div className="flex-1 p-4 overflow-y-auto space-y-2">
-        {messages.map((msg) => (
+        {(messages || []).map((msg) => (
           <MessageBubble
-            key={msg._id || msg.createdAt} // fallback id
+            key={msg._id || msg.createdAt}
             message={msg}
-            isOwn={msg.sender === user._id}
+            isOwn={String(msg.sender) === String(user._id)}
           />
         ))}
+
       </div>
 
       <div className="border-t p-3 flex space-x-2">
