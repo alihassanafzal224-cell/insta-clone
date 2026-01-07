@@ -8,16 +8,15 @@ import { useNavigate } from "react-router-dom";
 export default function ChatLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { conversations, onlineUsers } = useSelector((state) => state.chat);
-  const { user } = useSelector((state) => state.auth);
+  const { conversations, onlineUsers } = useSelector(state => state.chat);
+  const user = useSelector(state => state.auth.user);
 
   useEffect(() => {
     dispatch(fetchConversations());
   }, [dispatch]);
 
   useEffect(() => {
-    socket.on("online-users", (users) => {
-      console.log("chatlayout users:" ,users)
+    socket.on("online-users", users => {
       dispatch(setOnlineUsers(users));
     });
 
@@ -25,10 +24,10 @@ export default function ChatLayout() {
   }, [dispatch]);
 
   return (
-    <div className="w-1/3 border-r">
+    <div className="border-r h-full">
       <h3 className="p-4 font-semibold">Messages</h3>
 
-      {conversations.map((conv) => (
+      {conversations.map(conv => (
         <ConversationItem
           key={conv._id}
           conversation={conv}
