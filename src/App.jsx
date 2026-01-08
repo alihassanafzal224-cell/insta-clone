@@ -11,12 +11,9 @@ function App() {
     if (user) {
       socket.auth = { token: user.token }; // or cookie-based auth
       socket.connect();
-
-      console.log("Socket connecting...");
     } else {
       socket.disconnect();
     }
-
     return () => {
       socket.disconnect();
     };

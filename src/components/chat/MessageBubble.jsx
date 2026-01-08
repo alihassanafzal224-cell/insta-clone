@@ -3,36 +3,65 @@ import { useSelector } from "react-redux";
 export default function MessageBubble({ message, isOwn, isLast }) {
   const currentUser = useSelector(state => state.auth.user);
 
-  // Seen = last message sent by me AND other user has seen it
   const isSeen =
     isOwn &&
     isLast &&
     message.seenBy?.some(
-      userId => String(userId) !== String(currentUser._id)
+      id => String(id) !== String(currentUser._id)
     );
 
   return (
     <div className={`mb-2 flex ${isOwn ? "justify-end" : "justify-start"}`}>
       <div
-        className={`px-3 py-2 rounded-lg max-w-xs ${
+        className={`rounded-lg max-w-xs overflow-hidden relative ${
           isOwn ? "bg-blue-500 text-white" : "bg-gray-200"
         }`}
       >
-        <p>{message.text}</p>
+        {/* UPLOADING OVERLAY */}
+        {message.uploading && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center text-white text-sm z-10">
+            Uploading...
+          </div>
+        )}
 
-        <div className="flex justify-end gap-2 mt-1">
-          <span className="text-xs opacity-70">
+        {/* MEDIA */}
+        {message.media?.length > 0 && (
+          <div className="space-y-1">
+            {message.media.map((url, i) =>
+              url.match(/video|mp4|webm|mov/) ? (
+                <video
+                  key={i}
+                  src={url}
+                  controls
+                  className="w-full rounded"
+                />
+              ) : (
+                <img
+                  key={i}
+                  src={url}
+                  className="w-full rounded"
+                />
+              )
+            )}
+          </div>
+        )}
+
+        {/* TEXT */}
+        {message.text && (
+          <p className="px-3 py-2">{message.text}</p>
+        )}
+
+        {/* META */}
+        <div className="flex justify-end gap-2 px-2 pb-1 text-xs opacity-70">
+          <span>
             {new Date(message.createdAt).toLocaleTimeString([], {
               hour: "2-digit",
-              minute: "2-digit",
+              minute: "2-digit"
             })}
           </span>
 
-          {/* Instagram-style Seen */}
           {isOwn && isLast && (
-            <span className="text-xs opacity-70">
-              {isSeen ? "Seen" : "Delivered"}
-            </span>
+            <span>{isSeen ? "Seen" : "Delivered"}</span>
           )}
         </div>
       </div>

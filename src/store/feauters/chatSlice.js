@@ -63,38 +63,64 @@ const chatSlice = createSlice({
   initialState: {
     conversations: [],
     selectedConversation: null,
-    messages: {}, // each conversationId maps to an array
+    messages: {}, // { conversationId: [] }
     onlineUsers: [],
-    typingUsers: {}, // { conversationId: [userId] }
+    typingUsers: {}, // { conversationId: [user] }
     loading: false,
     error: null,
   },
+
   reducers: {
     setSelectedConversation(state, action) {
       state.selectedConversation = action.payload;
     },
 
+    /* --------- OPTIMISTIC ADD MESSAGE --------- */
     addMessage(state, action) {
       const { conversationId, message } = action.payload;
+
       if (!state.messages[conversationId]) {
         state.messages[conversationId] = [];
       }
+
       state.messages[conversationId].push(message);
 
-      // Update lastMessage in conversation list
+      // update lastMessage
       const conv = state.conversations.find(c => c._id === conversationId);
       if (conv) conv.lastMessage = message;
     },
 
+    /* --------- REPLACE TEMP MESSAGE --------- */
+    replaceMessage(state, action) {
+      const { conversationId, tempId, message } = action.payload;
+
+      const msgs = state.messages[conversationId];
+      if (!msgs) return;
+
+      const index = msgs.findIndex(m => m._id === tempId);
+      if (index !== -1) {
+        msgs[index] = message;
+      }
+
+      // update lastMessage if needed
+      const conv = state.conversations.find(c => c._id === conversationId);
+      if (conv?.lastMessage?._id === tempId) {
+        conv.lastMessage = message;
+      }
+    },
+
+    /* --------- ONLINE / TYPING --------- */
     setOnlineUsers(state, action) {
       state.onlineUsers = action.payload;
     },
 
     addTypingUser(state, action) {
       const { conversationId, user } = action.payload;
+
       if (!state.typingUsers[conversationId]) {
         state.typingUsers[conversationId] = [];
       }
+
       if (!state.typingUsers[conversationId].some(u => u._id === user._id)) {
         state.typingUsers[conversationId].push(user);
       }
@@ -102,23 +128,30 @@ const chatSlice = createSlice({
 
     removeTypingUser(state, action) {
       const { conversationId, userId } = action.payload;
+
       state.typingUsers[conversationId] =
         state.typingUsers[conversationId]?.filter(u => u._id !== userId) || [];
     },
+
+    /* --------- SEEN STATUS --------- */
     markMessagesSeen(state, action) {
       const { conversationId, userId } = action.payload;
 
       state.messages[conversationId]?.forEach(msg => {
-        if (!msg.seenBy.includes(userId)) {
+        if (!msg.seenBy?.includes(userId)) {
           msg.seenBy.push(userId);
         }
       });
     },
   },
+
+  /* -------------------- EXTRA REDUCERS -------------------- */
   extraReducers: builder => {
     builder
+      /* ---- FETCH CONVERSATIONS ---- */
       .addCase(fetchConversations.pending, state => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchConversations.fulfilled, (state, action) => {
         state.loading = false;
@@ -128,6 +161,8 @@ const chatSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+
+      /* ---- FETCH MESSAGES ---- */
       .addCase(fetchMessages.pending, (state, action) => {
         const conversationId = action.meta.arg;
         if (!state.messages[conversationId]) {
@@ -137,6 +172,16 @@ const chatSlice = createSlice({
       .addCase(fetchMessages.fulfilled, (state, action) => {
         const { conversationId, messages } = action.payload;
         state.messages[conversationId] = messages;
+      })
+
+      /* ---- CREATE CONVERSATION ---- */
+      .addCase(createConversation.fulfilled, (state, action) => {
+        const exists = state.conversations.some(
+          c => c._id === action.payload._id
+        );
+        if (!exists) {
+          state.conversations.unshift(action.payload);
+        }
       });
   },
 });
@@ -144,6 +189,7 @@ const chatSlice = createSlice({
 export const {
   setSelectedConversation,
   addMessage,
+  replaceMessage,
   setOnlineUsers,
   addTypingUser,
   removeTypingUser,

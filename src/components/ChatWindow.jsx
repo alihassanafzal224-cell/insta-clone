@@ -6,7 +6,8 @@ import {
   addMessage,
   markMessagesSeen,
   addTypingUser,
-  removeTypingUser
+  removeTypingUser,
+  replaceMessage
 } from "../store/feauters/chatSlice";
 import { socket } from "../socket";
 import MessageBubble from "./chat/MessageBubble";
@@ -16,26 +17,25 @@ export default function ChatWindow() {
   const dispatch = useDispatch();
   const user = useSelector(state => state.auth.user);
 
-  const messages = useSelector(
-    state => state.chat.messages[conversationId]
-  ) ?? [];
-
+  const messages =
+    useSelector(state => state.chat.messages[conversationId]) ?? [];
 
   const bottomRef = useRef(null);
 
-  // FETCH + JOIN CONVERSATION (MARK SEEN)
+  /* ---------- FETCH + JOIN ---------- */
   useEffect(() => {
     if (!conversationId) return;
 
     dispatch(fetchMessages(conversationId));
     socket.emit("join-conversation", conversationId);
-
-    // 🔑 notify server messages are seen
     socket.emit("mark-seen", { conversationId });
+
+    return () => {
+      socket.emit("leave-conversation", conversationId);
+    };
   }, [conversationId, dispatch]);
 
-
-  // SOCKET LISTENERS
+  /* ---------- SOCKET LISTENERS ---------- */
   useEffect(() => {
     socket.on("new-message", message => {
       dispatch(
@@ -43,12 +43,21 @@ export default function ChatWindow() {
           conversationId: message.conversationId,
           message
         })
-      )
+      );
 
-      // 🔑 if this chat is open, mark as seen
       if (message.conversationId === conversationId) {
-        socket.emit("join-conversation", conversationId);
+        socket.emit("mark-seen", { conversationId });
       }
+    });
+
+    socket.on("message-uploaded", ({ tempId, message }) => {
+      dispatch(
+        replaceMessage({
+          conversationId: message.conversationId,
+          tempId,
+          message
+        })
+      );
     });
 
     socket.on("messages-seen", ({ conversationId, userId }) => {
@@ -63,17 +72,16 @@ export default function ChatWindow() {
       dispatch(removeTypingUser({ conversationId, userId }));
     });
 
-
-
     return () => {
       socket.off("new-message");
+      socket.off("message-uploaded");
       socket.off("messages-seen");
       socket.off("typing");
       socket.off("stop-typing");
     };
-  }, [dispatch]);
+  }, [dispatch, conversationId]);
 
-  // AUTO SCROLL
+  /* ---------- AUTO SCROLL ---------- */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -82,7 +90,7 @@ export default function ChatWindow() {
 
   return (
     <div className="p-4 overflow-y-auto h-[90%]">
-      {messages && messages.map(msg => (
+      {messages.map(msg => (
         <MessageBubble
           key={msg._id}
           message={msg}
