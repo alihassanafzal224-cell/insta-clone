@@ -63,9 +63,9 @@ const chatSlice = createSlice({
   initialState: {
     conversations: [],
     selectedConversation: null,
-    messages: {},
+    messages: {}, // each conversationId maps to an array
     onlineUsers: [],
-    typingUsers: [],
+    typingUsers: {}, // { conversationId: [userId] }
     loading: false,
     error: null,
   },
@@ -91,15 +91,19 @@ const chatSlice = createSlice({
     },
 
     addTypingUser(state, action) {
-      if (!state.typingUsers.includes(action.payload)) {
-        state.typingUsers.push(action.payload);
+      const { conversationId, user } = action.payload;
+      if (!state.typingUsers[conversationId]) {
+        state.typingUsers[conversationId] = [];
+      }
+      if (!state.typingUsers[conversationId].some(u => u._id === user._id)) {
+        state.typingUsers[conversationId].push(user);
       }
     },
 
     removeTypingUser(state, action) {
-      state.typingUsers = state.typingUsers.filter(
-        u => u !== action.payload
-      );
+      const { conversationId, userId } = action.payload;
+      state.typingUsers[conversationId] =
+        state.typingUsers[conversationId]?.filter(u => u._id !== userId) || [];
     },
     markMessagesSeen(state, action) {
       const { conversationId, userId } = action.payload;
@@ -124,7 +128,12 @@ const chatSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-
+      .addCase(fetchMessages.pending, (state, action) => {
+        const conversationId = action.meta.arg;
+        if (!state.messages[conversationId]) {
+          state.messages[conversationId] = [];
+        }
+      })
       .addCase(fetchMessages.fulfilled, (state, action) => {
         const { conversationId, messages } = action.payload;
         state.messages[conversationId] = messages;

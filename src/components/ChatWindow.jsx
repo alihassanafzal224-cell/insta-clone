@@ -4,7 +4,9 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   fetchMessages,
   addMessage,
-  markMessagesSeen
+  markMessagesSeen,
+  addTypingUser,
+  removeTypingUser
 } from "../store/feauters/chatSlice";
 import { socket } from "../socket";
 import MessageBubble from "./chat/MessageBubble";
@@ -15,8 +17,9 @@ export default function ChatWindow() {
   const user = useSelector(state => state.auth.user);
 
   const messages = useSelector(
-    state => state.chat.messages[conversationId] || []
-  );
+    state => state.chat.messages[conversationId]
+  ) ?? [];
+
 
   const bottomRef = useRef(null);
 
@@ -26,7 +29,11 @@ export default function ChatWindow() {
 
     dispatch(fetchMessages(conversationId));
     socket.emit("join-conversation", conversationId);
+
+    // 🔑 notify server messages are seen
+    socket.emit("mark-seen", { conversationId });
   }, [conversationId, dispatch]);
+
 
   // SOCKET LISTENERS
   useEffect(() => {
@@ -36,16 +43,33 @@ export default function ChatWindow() {
           conversationId: message.conversationId,
           message
         })
-      );
+      )
+
+      // 🔑 if this chat is open, mark as seen
+      if (message.conversationId === conversationId) {
+        socket.emit("join-conversation", conversationId);
+      }
     });
 
     socket.on("messages-seen", ({ conversationId, userId }) => {
       dispatch(markMessagesSeen({ conversationId, userId }));
     });
 
+    socket.on("typing", ({ conversationId, user }) => {
+      dispatch(addTypingUser({ conversationId, user }));
+    });
+
+    socket.on("stop-typing", ({ conversationId, userId }) => {
+      dispatch(removeTypingUser({ conversationId, userId }));
+    });
+
+
+
     return () => {
       socket.off("new-message");
       socket.off("messages-seen");
+      socket.off("typing");
+      socket.off("stop-typing");
     };
   }, [dispatch]);
 
@@ -58,7 +82,7 @@ export default function ChatWindow() {
 
   return (
     <div className="p-4 overflow-y-auto h-[90%]">
-      {messages.map(msg => (
+      {messages && messages.map(msg => (
         <MessageBubble
           key={msg._id}
           message={msg}

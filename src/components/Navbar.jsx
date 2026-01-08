@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux"
-import { logout, logoutUserAsync } from "../store/feauters/authSlice";
+import {  logoutUserAsync } from "../store/feauters/authSlice";
 import { useDispatch } from "react-redux";
 
 export const Navbar = () => {

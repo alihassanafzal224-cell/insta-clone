@@ -1,8 +1,25 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { socket } from "../../socket";
 
 export default function ChatInput({ conversationId }) {
   const [text, setText] = useState("");
+  const typing = useRef(false);
+  const timeoutRef = useRef(null);
+
+  const handleTyping = value => {
+    setText(value);
+
+    if (!typing.current) {
+      typing.current = true;
+      socket.emit("typing", { conversationId });
+    }
+
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      typing.current = false;
+      socket.emit("stop-typing", { conversationId });
+    }, 2000); // 2s idle before stop-typing
+  };
 
   const sendMessage = () => {
     if (!text.trim()) return;
@@ -11,6 +28,12 @@ export default function ChatInput({ conversationId }) {
       conversationId,
       text: text.trim(),
     });
+
+    // Immediately stop typing on send
+    if (typing.current) {
+      typing.current = false;
+      socket.emit("stop-typing", { conversationId });
+    }
 
     setText("");
   };
@@ -21,7 +44,7 @@ export default function ChatInput({ conversationId }) {
         className="flex-1 border rounded px-3 py-2"
         placeholder="Type a message..."
         value={text}
-        onChange={e => setText(e.target.value)}
+        onChange={e => handleTyping(e.target.value)}
         onKeyDown={e => e.key === "Enter" && sendMessage()}
       />
       <button
