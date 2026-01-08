@@ -10,7 +10,13 @@ export default function Messages() {
   return (
     <div className="h-screen flex flex-col bg-linear-to-br from-pink-50 via-purple-50 to-indigo-50">
       {/* Top spacing for main navbar */}
-      <div className="pt-16 flex flex-1 overflow-hidden">
+      <header className="bg-white border-b border-gray-300 fixed top-0 w-full z-10">
+        <div className="max-w-5xl mx-auto flex items-center justify-between px-4 h-14">
+          <h1 className="text-2xl font-serif">Instagram</h1>
+        </div>
+      </header>
+
+      <div className="pt-15 flex flex-1 overflow-hidden">
 
         {/* Left panel – Conversations */}
         <div className="w-90 bg-white/80 backdrop-blur-xl border-r border-gray-200 shadow-sm overflow-y-auto">
