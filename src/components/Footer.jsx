@@ -7,20 +7,15 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { selectUnreadConversationCount } from "../store/feauters/chatSlice";
 
 export default function Footer() {
   const navigate = useNavigate();
   const location = useLocation();
-  const loggedInUser = useSelector((state) => state.auth.user);
+  const loggedInUser = useSelector(state => state.auth.user);
 
-  // ✅ GET CONVERSATIONS FROM CHAT SLICE
-  const { conversations } = useSelector(state => state.chat);
-
-  // ✅ TOTAL UNREAD COUNT (INSTAGRAM STYLE)
-  const totalUnread = conversations.reduce(
-    (sum, conv) => sum + (conv.unreadCount || 0),
-    0
-  );
+  // ✅ INSTAGRAM-STYLE COUNT
+  const totalUnread = useSelector(selectUnreadConversationCount);
 
   const isActive = (path) => {
     if (path === "/") {
@@ -31,17 +26,9 @@ export default function Footer() {
       : "text-gray-500";
   };
 
-  const handleProfileClick = () => {
-    if (loggedInUser?._id) {
-      navigate("/profile");
-    } else {
-      navigate("/login");
-    }
-  };
-
   return (
     <footer className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-300 z-50">
-      <div className="max-w-full mx-auto flex justify-around items-center h-14 px-4">
+      <div className="flex justify-around items-center h-14 px-4">
 
         <button onClick={() => navigate("/")} className={isActive("/")}>
           <Home />
@@ -51,7 +38,6 @@ export default function Footer() {
           <Search />
         </button>
 
-        {/* ✅ MESSAGES ICON WITH UNREAD COUNT */}
         <button
           onClick={() => navigate("/messages")}
           className={`relative ${isActive("/messages")}`}
@@ -59,15 +45,13 @@ export default function Footer() {
           <MessageCircle />
 
           {totalUnread > 0 && (
-            <span
-              className="
-                absolute -top-1 -right-1
-                bg-red-500 text-white text-xs
-                min-w-4.5 h-4.5
-                flex items-center justify-center
-                rounded-full px-1
-              "
-            >
+            <span className="
+              absolute -top-1 -right-1
+              bg-red-500 text-white text-xs
+              min-w-4.5 h-4.5
+              flex items-center justify-center
+              rounded-full px-1
+            ">
               {totalUnread > 9 ? "9+" : totalUnread}
             </span>
           )}
@@ -77,7 +61,7 @@ export default function Footer() {
           <PlusSquare />
         </button>
 
-        <button onClick={handleProfileClick} className={isActive("/profile")}>
+        <button onClick={() => navigate("/profile")} className={isActive("/profile")}>
           <User />
         </button>
 

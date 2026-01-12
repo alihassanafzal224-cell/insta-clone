@@ -35,7 +35,7 @@ export const fetchMessages = createAsyncThunk(
   }
 );
 
-// ✅ DO NOT CHANGE (kept exactly as requested)
+// DO NOT CHANGE
 export const createConversation = createAsyncThunk(
   "chat/createConversation",
   async (userId, { rejectWithValue }) => {
@@ -56,7 +56,7 @@ export const createConversation = createAsyncThunk(
   }
 );
 
-// Send message (with file upload)
+// Send message
 export const sendMessageWithMedia = createAsyncThunk(
   "chat/sendMessageWithMedia",
   async ({ conversationId, text, files, tempId }, { rejectWithValue }) => {
@@ -83,7 +83,7 @@ export const sendMessageWithMedia = createAsyncThunk(
         throw new Error(error.message || "Failed to send message");
       }
 
-      return await res.json(); // real message
+      return await res.json();
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -109,9 +109,9 @@ const chatSlice = createSlice({
       state.selectedConversation = action.payload;
     },
 
-    /* --------- ADD MESSAGE (OPTIMISTIC / SOCKET) --------- */
+    /* --------- ADD MESSAGE --------- */
     addMessage(state, action) {
-      const { conversationId, message } = action.payload;
+      const { conversationId, message, loggedInUserId } = action.payload;
 
       state.messages[conversationId] ??= [];
 
@@ -122,12 +122,24 @@ const chatSlice = createSlice({
         state.messages[conversationId].push(message);
       }
 
-      const convIndex = state.conversations.findIndex(c => c._id === conversationId);
-      if (convIndex !== -1) {
-        state.conversations[convIndex].lastMessage = message;
-        state.conversations[convIndex].updatedAt = new Date().toISOString();
+      const convIndex = state.conversations.findIndex(
+        c => c._id === conversationId
+      );
 
-        const [conv] = state.conversations.splice(convIndex, 1);
+      if (convIndex !== -1) {
+        const conv = state.conversations[convIndex];
+        conv.lastMessage = message;
+        conv.updatedAt = new Date().toISOString();
+
+        // ✅ MARK UNREAD BY USER (NOT MESSAGE COUNT)
+        if (message.sender?._id !== loggedInUserId) {
+          conv.unreadBy ??= [];
+          if (!conv.unreadBy.includes(loggedInUserId)) {
+            conv.unreadBy.push(loggedInUserId);
+          }
+        }
+
+        state.conversations.splice(convIndex, 1);
         state.conversations.unshift(conv);
       }
     },
@@ -146,7 +158,6 @@ const chatSlice = createSlice({
       }
     },
 
-    /* --------- REMOVE TEMP MESSAGE --------- */
     removeTempMessage(state, action) {
       const { conversationId, tempId } = action.payload;
       state.messages[conversationId] =
@@ -155,7 +166,6 @@ const chatSlice = createSlice({
         ) || [];
     },
 
-    /* --------- ONLINE / TYPING --------- */
     setOnlineUsers(state, action) {
       state.onlineUsers = action.payload;
     },
@@ -174,33 +184,51 @@ const chatSlice = createSlice({
         state.typingUsers[conversationId]?.filter(u => u._id !== userId) || [];
     },
 
-    /* --------- SEEN --------- */
     markMessagesSeen(state, action) {
       const { conversationId, userId } = action.payload;
+
       state.messages[conversationId]?.forEach(msg => {
         msg.seenBy ??= [];
         if (!msg.seenBy.includes(userId)) {
           msg.seenBy.push(userId);
         }
       });
+
+      const conv = state.conversations.find(c => c._id === conversationId);
+      if (conv) {
+        conv.unreadBy = conv.unreadBy?.filter(id => id !== userId);
+      }
     },
 
+    /* ✅ FIXED */
     incrementUnread(state, action) {
       const conv = state.conversations.find(c => c._id === action.payload);
-      if (conv) conv.unreadCount = (conv.unreadCount || 0) + 1;
+      if (conv) {
+        conv.unreadCount = (conv.unreadCount ?? 0) + 1;
+      }
+    },
+    getUnreadConversationCount(state) {
+      return state.conversations.filter(
+        conv => (conv.unreadCount ?? 0) > 0
+      ).length;
     },
 
+    /* ✅ RESTORED — USED BY YOUR APP */
     clearUnread(state, action) {
-      const conv = state.conversations.find(c => c._id === action.payload);
-      if (conv) conv.unreadCount = 0;
+      const { conversationId, userId } = action.payload;
+      const conv = state.conversations.find(c => c._id === conversationId);
+      if (conv) {
+        conv.unreadBy = conv.unreadBy?.filter(id => id !== userId);
+      }
     },
+
   },
 
   /* -------------------- EXTRA REDUCERS -------------------- */
   extraReducers: builder => {
     builder
       .addCase(fetchConversations.fulfilled, (state, action) => {
-        state.conversations = [...action.payload].sort(
+        state.conversations = action.payload.sort(
           (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
         );
       })
@@ -219,12 +247,14 @@ const chatSlice = createSlice({
         if (!exists) {
           state.conversations.unshift(action.payload);
         }
-      })
-
-      /* ❗ Do NOT mutate state here — handled by replaceMessage */
-      .addCase(sendMessageWithMedia.fulfilled, () => {});
+      });
   },
 });
+export const selectUnreadConversationCount = (state) =>
+  state.chat.conversations.filter(
+    conv => (conv.unreadCount ?? 0) > 0
+  ).length;
+
 
 export const {
   setSelectedConversation,
@@ -235,8 +265,8 @@ export const {
   addTypingUser,
   removeTypingUser,
   markMessagesSeen,
-  incrementUnread,
   clearUnread,
+  incrementUnread,
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
