@@ -1,11 +1,10 @@
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { useEffect, useState, useRef } from "react";
 import { Play, Pause, Volume2, VolumeX, Download, Video as VideoIcon, Image as ImageIcon } from "lucide-react";
-import { updateMessageMedia } from "../../store/feauters/chatSlice"; // Updated import path
+
 
 export default function MessageBubble({ message, isOwn, isLast }) {
   const currentUser = useSelector(state => state.auth.user);
-  const dispatch = useDispatch();
   
   const [mediaLoaded, setMediaLoaded] = useState({});
   const [videoStates, setVideoStates] = useState({});

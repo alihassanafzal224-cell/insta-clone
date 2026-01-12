@@ -13,6 +13,15 @@ export default function Footer() {
   const location = useLocation();
   const loggedInUser = useSelector((state) => state.auth.user);
 
+  // ✅ GET CONVERSATIONS FROM CHAT SLICE
+  const { conversations } = useSelector(state => state.chat);
+
+  // ✅ TOTAL UNREAD COUNT (INSTAGRAM STYLE)
+  const totalUnread = conversations.reduce(
+    (sum, conv) => sum + (conv.unreadCount || 0),
+    0
+  );
+
   const isActive = (path) => {
     if (path === "/") {
       return location.pathname === "/" ? "text-black" : "text-gray-500";
@@ -33,6 +42,7 @@ export default function Footer() {
   return (
     <footer className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-300 z-50">
       <div className="max-w-full mx-auto flex justify-around items-center h-14 px-4">
+
         <button onClick={() => navigate("/")} className={isActive("/")}>
           <Home />
         </button>
@@ -41,12 +51,26 @@ export default function Footer() {
           <Search />
         </button>
 
-        {/* ✅ MESSAGES */}
+        {/* ✅ MESSAGES ICON WITH UNREAD COUNT */}
         <button
           onClick={() => navigate("/messages")}
-          className={isActive("/messages")}
+          className={`relative ${isActive("/messages")}`}
         >
           <MessageCircle />
+
+          {totalUnread > 0 && (
+            <span
+              className="
+                absolute -top-1 -right-1
+                bg-red-500 text-white text-xs
+                min-w-4.5 h-4.5
+                flex items-center justify-center
+                rounded-full px-1
+              "
+            >
+              {totalUnread > 9 ? "9+" : totalUnread}
+            </span>
+          )}
         </button>
 
         <button onClick={() => navigate("/post")} className={isActive("/post")}>
@@ -56,6 +80,7 @@ export default function Footer() {
         <button onClick={handleProfileClick} className={isActive("/profile")}>
           <User />
         </button>
+
       </div>
     </footer>
   );
