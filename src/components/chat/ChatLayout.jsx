@@ -3,11 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchConversations, setOnlineUsers } from "../../store/feauters/chatSlice";
 import { socket } from "../../socket";
 import ConversationItem from "./ConversationItem";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 export default function ChatLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { conversationId: activeConversationId } = useParams(); // get active conversation from URL
   const { conversations, onlineUsers } = useSelector(state => state.chat);
   const user = useSelector(state => state.auth.user);
 
@@ -19,7 +20,6 @@ export default function ChatLayout() {
     socket.on("online-users", users => {
       dispatch(setOnlineUsers(users));
     });
-
     return () => socket.off("online-users");
   }, [dispatch]);
 
@@ -33,6 +33,7 @@ export default function ChatLayout() {
           conversation={conv}
           currentUser={user}
           onlineUsers={onlineUsers}
+          active={conv._id === activeConversationId} // highlight if active
           onClick={() => navigate(`/messages/${conv._id}`)}
         />
       ))}
