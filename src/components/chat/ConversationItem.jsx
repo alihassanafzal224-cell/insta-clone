@@ -92,18 +92,19 @@ export default function ConversationItem({
         <div className="flex items-center gap-1">
           {conversation.lastMessage?.sender?._id ===
             currentUser._id && (
-            <span className="text-xs text-gray-500">You: </span>
-          )}
+              <span className="text-xs text-gray-500">You: </span>
+            )}
 
           <p className="text-sm text-gray-500 truncate flex-1">
             {getLastMessagePreview()}
           </p>
 
           {conversation.unreadCount > 0 && !active && (
-            <span className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shrink-0">
+            <span className="bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {conversation.unreadCount}
             </span>
           )}
+
         </div>
       </div>
     </div>

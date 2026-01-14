@@ -2,10 +2,10 @@ import { useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchMessages,
-  clearUnread
+  fetchMessages
 } from "../store/feauters/chatSlice";
 import MessageBubble from "./chat/MessageBubble";
+import { socket } from "../socket";
 
 export default function ChatWindow() {
   const { conversationId } = useParams();
@@ -21,8 +21,16 @@ export default function ChatWindow() {
   useEffect(() => {
     if (!conversationId) return;
     dispatch(fetchMessages(conversationId));
-    dispatch(clearUnread(conversationId));
   }, [conversationId, dispatch]);
+  
+  /* JOIN SOCKET ROOM (without resetting unread) */
+  useEffect(() => {
+    if (conversationId) {
+      // Only join room, don't reset unread
+      socket.emit("open-conversation", conversationId);
+      return () => socket.emit("leave-conversation", conversationId);
+    }
+  }, [conversationId]);
 
   /* AUTO SCROLL */
   useEffect(() => {

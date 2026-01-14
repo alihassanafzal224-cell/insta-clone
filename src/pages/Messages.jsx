@@ -3,66 +3,53 @@ import ChatLayout from "../components/chat/ChatLayout";
 import ChatInput from "../components/chat/ChatInput";
 import ChatHeader from "../components/chat/ChatHeader";
 import { Outlet, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
-import { socket } from "../socket";
-
-import {
-  fetchConversations,
-  setOnlineUsers,
-  addMessage,
-  incrementUnread
-} from "../store/feauters/chatSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setConversationUnread, addMessage } from "../store/feauters/chatSlice";
+import { socket } from "../socket"; // make sure your socket instance is exported
 
 export default function Messages() {
-  const dispatch = useDispatch();
   const { conversationId } = useParams();
-  const { conversations } = useSelector(state => state.chat);
+  const dispatch = useDispatch();
 
-  /* FETCH CONVERSATIONS */
+  const conversations = useSelector(state => state.chat.conversations);
+  const loggedInUser = useSelector(state => state.auth.user);
+
+  // Join/leave socket room when conversation changes
+  // DO NOT reset unread here - only when user explicitly clicks a conversation
   useEffect(() => {
-    dispatch(fetchConversations());
-  }, [dispatch]);
+    if (!conversationId) return;
 
-  /* JOIN / LEAVE ALL CONVERSATIONS */
-  useEffect(() => {
-    if (!conversations.length) return;
-
-    conversations.forEach(conv =>
-      socket.emit("join-conversation", conv._id)
-    );
+    // ONLY join socket room
+    socket.emit("open-conversation", conversationId);
 
     return () => {
-      conversations.forEach(conv =>
-        socket.emit("leave-conversation", conv._id)
-      );
+      socket.emit("leave-conversation", conversationId);
     };
-  }, [conversations]);
+  }, [conversationId]);
 
-  /* SOCKET LISTENERS */
+  // Listen for new messages and unread updates
   useEffect(() => {
-    socket.on("online-users", users => {
-      dispatch(setOnlineUsers(users));
-    });
+    if (!loggedInUser?._id) return;
 
-    socket.on("new-message", message => {
-      dispatch(
-        addMessage({
-          conversationId: message.conversationId,
-          message
-        })
-      );
+    // New message received
+    const handleNewMessage = (msg) => {
+      dispatch(addMessage(msg));
+    };
 
-      if (message.conversationId !== conversationId) {
-        dispatch(incrementUnread(message.conversationId));
-      }
-    });
+    // Unread count update from server
+    const handleUnreadUpdate = ({ conversationId, unreadCount }) => {
+      dispatch(setConversationUnread({ conversationId, unreadCount }));
+    };
+
+    socket.on("new-message", handleNewMessage);
+    socket.on("conversation-unread-update", handleUnreadUpdate);
 
     return () => {
-      socket.off("online-users");
-      socket.off("new-message");
+      socket.off("new-message", handleNewMessage);
+      socket.off("conversation-unread-update", handleUnreadUpdate);
     };
-  }, [dispatch, conversationId]);
+  }, [dispatch, loggedInUser?._id]);
 
   return (
     <div className="h-screen flex flex-col bg-linear-to-br from-pink-50 via-purple-50 to-indigo-50">
@@ -79,14 +66,10 @@ export default function Messages() {
 
         <div className="flex-1 flex flex-col h-[90%]">
           {conversationId && <ChatHeader />}
-
           <div className="flex-1 overflow-y-auto">
             <Outlet />
           </div>
-
-          {conversationId && (
-            <ChatInput conversationId={conversationId} />
-          )}
+          {conversationId && <ChatInput conversationId={conversationId} />}
         </div>
       </div>
 

@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchConversations,
-  clearUnread
+  setConversationUnread,
+  addMessage
 } from "../../store/feauters/chatSlice";
 import ConversationItem from "./ConversationItem";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,17 +14,41 @@ export default function ChatLayout() {
   const navigate = useNavigate();
   const { conversationId: activeConversationId } = useParams();
 
-  const { conversations, onlineUsers } = useSelector(state => state.chat);
+  const { conversations, onlineUsers, currentUser } = useSelector(state => state.chat);
   const user = useSelector(state => state.auth.user);
 
-  /* FETCH CONVERSATIONS */
+  /* ---------------- FETCH CONVERSATIONS ---------------- */
   useEffect(() => {
     dispatch(fetchConversations());
   }, [dispatch]);
 
-  /* HANDLE CLICK */
-  const handleConversationClick = conv => {
-    dispatch(clearUnread(conv._id));
+  /* ---------------- SOCKET LISTENERS ---------------- */
+  useEffect(() => {
+    if (!currentUser?._id) return;
+
+    const handleNewMessage = (msg) => {
+      dispatch(addMessage({
+        conversationId: msg.conversationId,
+        message: msg
+      }));
+    };
+
+    socket.on("new-message", handleNewMessage);
+
+    return () => {
+      socket.off("new-message", handleNewMessage);
+    };
+  }, [dispatch, currentUser?._id]);
+
+  /* ---------------- HANDLE CLICK ---------------- */
+  const handleConversationClick = (conv) => {
+    // Instagram-exact: ONLY reset unread when user explicitly clicks
+    dispatch(setConversationUnread({
+      conversationId: conv._id,
+      unreadCount: 0
+    }));
+
+    socket.emit("open-conversation", conv._id);
     navigate(`/messages/${conv._id}`);
   };
 

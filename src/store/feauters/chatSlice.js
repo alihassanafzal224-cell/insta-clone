@@ -35,7 +35,7 @@ export const fetchMessages = createAsyncThunk(
   }
 );
 
-// DO NOT CHANGE
+// Create conversation
 export const createConversation = createAsyncThunk(
   "chat/createConversation",
   async (userId, { rejectWithValue }) => {
@@ -56,7 +56,7 @@ export const createConversation = createAsyncThunk(
   }
 );
 
-// Send message
+// Send message with optional media
 export const sendMessageWithMedia = createAsyncThunk(
   "chat/sendMessageWithMedia",
   async ({ conversationId, text, files, tempId }, { rejectWithValue }) => {
@@ -64,10 +64,7 @@ export const sendMessageWithMedia = createAsyncThunk(
       const formData = new FormData();
       formData.append("text", text);
       formData.append("tempId", tempId);
-
-      if (files?.length) {
-        files.forEach(file => formData.append("media", file));
-      }
+      if (files?.length) files.forEach(f => formData.append("media", f));
 
       const res = await fetch(
         `http://localhost:8000/api/messages/${conversationId}`,
@@ -96,66 +93,45 @@ const chatSlice = createSlice({
   name: "chat",
   initialState: {
     conversations: [],
-    selectedConversation: null,
     messages: {},
     onlineUsers: [],
     typingUsers: {},
-    loading: false,
-    error: null,
   },
 
   reducers: {
-    setSelectedConversation(state, action) {
-      state.selectedConversation = action.payload;
-    },
-
-    /* --------- ADD MESSAGE --------- */
+    /* ---------------- ADD MESSAGE ---------------- */
     addMessage(state, action) {
-      const { conversationId, message, loggedInUserId } = action.payload;
+      const { conversationId, message } = action.payload;
 
       state.messages[conversationId] ??= [];
 
+      // Avoid duplicates
       const exists = state.messages[conversationId].some(
         m => m._id === message._id || m.tempId === message.tempId
       );
-      if (!exists) {
-        state.messages[conversationId].push(message);
-      }
+      if (!exists) state.messages[conversationId].push(message);
 
-      const convIndex = state.conversations.findIndex(
-        c => c._id === conversationId
-      );
-
+      // Update conversation lastMessage & move to top
+      const convIndex = state.conversations.findIndex(c => c._id === conversationId);
       if (convIndex !== -1) {
         const conv = state.conversations[convIndex];
         conv.lastMessage = message;
         conv.updatedAt = new Date().toISOString();
 
-        // ✅ MARK UNREAD BY USER (NOT MESSAGE COUNT)
-        if (message.sender?._id !== loggedInUserId) {
-          conv.unreadBy ??= [];
-          if (!conv.unreadBy.includes(loggedInUserId)) {
-            conv.unreadBy.push(loggedInUserId);
-          }
-        }
-
+        // Move conversation to top (Instagram behavior)
         state.conversations.splice(convIndex, 1);
         state.conversations.unshift(conv);
       }
     },
 
-    /* --------- REPLACE TEMP MESSAGE --------- */
+    /* ---------------- REPLACE TEMP MESSAGE ---------------- */
     replaceMessage(state, action) {
       const { conversationId, tempId, message } = action.payload;
       const msgs = state.messages[conversationId];
       if (!msgs) return;
 
-      const index = msgs.findIndex(
-        m => m.tempId === tempId || m._id === tempId
-      );
-      if (index !== -1) {
-        msgs[index] = message;
-      }
+      const index = msgs.findIndex(m => m.tempId === tempId || m._id === tempId);
+      if (index !== -1) msgs[index] = message;
     },
 
     removeTempMessage(state, action) {
@@ -166,10 +142,11 @@ const chatSlice = createSlice({
         ) || [];
     },
 
+    /* ---------------- ONLINE & TYPING ---------------- */
     setOnlineUsers(state, action) {
       state.onlineUsers = action.payload;
     },
-
+    
     addTypingUser(state, action) {
       const { conversationId, user } = action.payload;
       state.typingUsers[conversationId] ??= [];
@@ -177,96 +154,67 @@ const chatSlice = createSlice({
         state.typingUsers[conversationId].push(user);
       }
     },
-
+    
     removeTypingUser(state, action) {
       const { conversationId, userId } = action.payload;
       state.typingUsers[conversationId] =
         state.typingUsers[conversationId]?.filter(u => u._id !== userId) || [];
     },
 
+    /* ---------------- UNREAD MANAGEMENT ---------------- */
+    setConversationUnread(state, action) {
+      const { conversationId, unreadCount } = action.payload;
+      const conv = state.conversations.find(c => c._id === conversationId);
+      if (conv) {
+        conv.unreadCount = unreadCount ?? 0;
+      }
+    },
+
+    /* ---------------- SEEN MESSAGES ---------------- */
     markMessagesSeen(state, action) {
       const { conversationId, userId } = action.payload;
+      const msgs = state.messages[conversationId];
+      if (!msgs) return;
 
-      state.messages[conversationId]?.forEach(msg => {
-        msg.seenBy ??= [];
-        if (!msg.seenBy.includes(userId)) {
-          msg.seenBy.push(userId);
+      msgs.forEach(m => {
+        if (!m.seenBy?.includes(userId)) {
+          m.seenBy = [...(m.seenBy || []), userId];
         }
       });
-
-      const conv = state.conversations.find(c => c._id === conversationId);
-      if (conv) {
-        conv.unreadBy = conv.unreadBy?.filter(id => id !== userId);
-      }
     },
-
-    /* ✅ FIXED */
-    incrementUnread(state, action) {
-      const conv = state.conversations.find(c => c._id === action.payload);
-      if (conv) {
-        conv.unreadCount = (conv.unreadCount ?? 0) + 1;
-      }
-    },
-    getUnreadConversationCount(state) {
-      return state.conversations.filter(
-        conv => (conv.unreadCount ?? 0) > 0
-      ).length;
-    },
-
-    /* ✅ RESTORED — USED BY YOUR APP */
-    clearUnread(state, action) {
-      const { conversationId, userId } = action.payload;
-      const conv = state.conversations.find(c => c._id === conversationId);
-      if (conv) {
-        conv.unreadBy = conv.unreadBy?.filter(id => id !== userId);
-      }
-    },
-
   },
 
-  /* -------------------- EXTRA REDUCERS -------------------- */
   extraReducers: builder => {
     builder
       .addCase(fetchConversations.fulfilled, (state, action) => {
-        state.conversations = action.payload.sort(
-          (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
-        );
+        state.conversations = action.payload;
       })
-
       .addCase(fetchMessages.fulfilled, (state, action) => {
         const { conversationId, messages } = action.payload;
         state.messages[conversationId] = messages.sort(
           (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
         );
       })
-
       .addCase(createConversation.fulfilled, (state, action) => {
-        const exists = state.conversations.some(
-          c => c._id === action.payload._id
-        );
-        if (!exists) {
-          state.conversations.unshift(action.payload);
-        }
+        const exists = state.conversations.some(c => c._id === action.payload._id);
+        if (!exists) state.conversations.unshift(action.payload);
       });
   },
 });
-export const selectUnreadConversationCount = (state) =>
-  state.chat.conversations.filter(
-    conv => (conv.unreadCount ?? 0) > 0
-  ).length;
 
+/* -------------------- SELECTORS -------------------- */
+export const selectUnreadConversationCount = state =>
+  state.chat.conversations.filter(conv => (conv.unreadCount ?? 0) > 0).length;
 
 export const {
-  setSelectedConversation,
   addMessage,
   replaceMessage,
   removeTempMessage,
   setOnlineUsers,
   addTypingUser,
   removeTypingUser,
-  markMessagesSeen,
-  clearUnread,
-  incrementUnread,
+  setConversationUnread,
+  markMessagesSeen
 } = chatSlice.actions;
 
 export default chatSlice.reducer;
