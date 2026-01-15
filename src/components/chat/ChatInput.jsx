@@ -216,7 +216,7 @@ export default function ChatInput({ conversationId }) {
   };
 
   return (
-    <div className="border-t p-4 bg-white space-y-2 relative">
+    <div className="border-t p-4 bg-white space-y-2 relative border-b border-gray-300 ">
       {/* Typing indicator */}
       {typingUsers.length > 0 && (
         <p className="text-xs text-gray-500 animate-pulse">

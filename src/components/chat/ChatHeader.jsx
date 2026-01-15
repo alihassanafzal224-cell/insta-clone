@@ -40,7 +40,7 @@ export default function ChatHeader() {
   const displayUser = otherUsers[0];
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b bg-white">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-300 ">
       <div className="relative">
         <img
           src={displayUser.avatar || "/default-avatar.png"}
