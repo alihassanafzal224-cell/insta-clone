@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchConversations,
   setConversationUnread,
   addMessage
 } from "../../store/feauters/chatSlice";
@@ -16,6 +15,7 @@ export default function ChatLayout() {
 
   const { conversations, onlineUsers, currentUser } = useSelector(state => state.chat);
   const user = useSelector(state => state.auth.user);
+  
 
   /* ---------------- SOCKET LISTENERS ---------------- */
   useEffect(() => {
