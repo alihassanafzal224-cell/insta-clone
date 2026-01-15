@@ -64,17 +64,23 @@ export default function Footer() {
   return (
     <footer className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-300 z-50">
       <div className="flex justify-around items-center h-14 px-4">
-        <button onClick={() => navigate("/")} className={isActive("/")}>
+        <button 
+          onClick={() => navigate("/")} 
+          className={`cursor-pointer ${isActive("/")}`}
+        >
           <Home />
         </button>
 
-        <button onClick={() => navigate("/search")} className={isActive("/search")}>
+        <button 
+          onClick={() => navigate("/search")} 
+          className={`cursor-pointer ${isActive("/search")}`}
+        >
           <Search />
         </button>
 
         <button
           onClick={() => navigate("/messages")}
-          className={`relative ${isActive("/messages")}`}
+          className={`relative cursor-pointer ${isActive("/messages")}`}
         >
           <MessageCircle />
           {totalUnread > 0 && (
@@ -84,17 +90,24 @@ export default function Footer() {
               min-w-4.5 h-4.5
               flex items-center justify-center
               rounded-full px-1
+              cursor-pointer
             ">
               {totalUnread > 9 ? "9+" : totalUnread}
             </span>
           )}
         </button>
 
-        <button onClick={() => navigate("/post")} className={isActive("/post")}>
+        <button 
+          onClick={() => navigate("/post")} 
+          className={`cursor-pointer ${isActive("/post")}`}
+        >
           <PlusSquare />
         </button>
 
-        <button onClick={() => navigate("/profile")} className={isActive("/profile")}>
+        <button 
+          onClick={() => navigate("/profile")} 
+          className={`cursor-pointer ${isActive("/profile")}`}
+        >
           <User />
         </button>
       </div>

@@ -1,11 +1,13 @@
-import { useEffect, useState, useMemo} from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { Navbar } from "../components/Navbar";
 import Footer from "../components/Footer";
 import PostCardSkeleton from "../components/PostCardSkeleton";
 import PostCard from "../components/PostCard";
 import StatusPage from "../components/StatusPage";
+import MyStatusBubble from "../components/MyStatusBubble";
 import { socket } from "../socket";
 import { fetchPosts } from "../store/feauters/postSlice";
 import {
@@ -14,11 +16,11 @@ import {
   createStatus,
   deleteStatus,
 } from "../store/feauters/statusSlice";
-import { logoutUserAsync} from "../store/feauters/authSlice";
-
+import { logoutUserAsync } from "../store/feauters/authSlice";
 
 export default function HomePage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const { posts, loading } = useSelector((state) => state.post);
   const { statuses, loading: statusLoading } = useSelector(
@@ -46,11 +48,13 @@ export default function HomePage() {
     const formData = new FormData();
     formData.append("media", file);
 
-    await dispatch(createStatus(formData));
-    setStatusFile(null);
-
-    dispatch(fetchStatusesByUserId(user._id));
-    dispatch(fetchAllStatuses());
+    try {
+      await dispatch(createStatus(formData)).unwrap();
+      dispatch(fetchStatusesByUserId(user._id));
+      dispatch(fetchAllStatuses());
+    } catch (error) {
+      Swal.fire("Error", "Failed to upload status", "error");
+    }
   };
 
   /* -------------------- DELETE STATUS -------------------- */
@@ -103,6 +107,11 @@ export default function HomePage() {
     return [...my, ...followed, ...others];
   }, [statuses, user]);
 
+  /* -------------------- GET MY STATUSES -------------------- */
+  const myStatuses = useMemo(() => {
+    return groupedStatuses.find((s) => s[0]?.user._id === user?._id) || [];
+  }, [groupedStatuses, user]);
+
   /* -------------------- VIEW STATUS PAGE -------------------- */
   const handleViewStatusPage = (userStatuses, index = 0) => {
     setClickedUserStatuses(userStatuses);
@@ -112,20 +121,16 @@ export default function HomePage() {
 
   /* -------------------- LOGOUT -------------------- */
   const handleLogout = async () => {
-  try {
-     socket.disconnect();
-    await dispatch(logoutUserAsync()).unwrap();
-
-    Swal.fire("Logged out", "You have been logged out successfully.", "success");
-
-    navigate("/login"); 
-  } catch (err) {
-    console.error("Logout failed:", err);
-    Swal.fire("Error", "Logout failed. Please try again.", "error");
-  }
-};
-
-
+    try {
+      socket.disconnect();
+      await dispatch(logoutUserAsync()).unwrap();
+      Swal.fire("Logged out", "You have been logged out successfully.", "success");
+      navigate("/login");
+    } catch (err) {
+      console.error("Logout failed:", err);
+      Swal.fire("Error", "Logout failed. Please try again.", "error");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -134,71 +139,43 @@ export default function HomePage() {
       <div className="pt-16">
         {/* ==================== STATUS / STORIES ==================== */}
         <div className="bg-white border-b border-gray-300 py-3 px-4 flex items-center space-x-4 overflow-x-auto">
-          {/* Add Status */}
-          <div className="flex flex-col items-center relative">
-            <label className="cursor-pointer flex flex-col items-center">
-              <div className="w-20 h-20 rounded-full border-2 border-gray-300 flex items-center justify-center text-xl font-bold">
-                +
-              </div>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                hidden
-                onChange={(e) => setStatusFile(e.target.files[0])}
-              />
-            </label>
+          {/* My Status Bubble */}
+          <MyStatusBubble
+            user={user}
+            myStatuses={myStatuses}
+            onAdd={(file) => handleStatusUpload(file)}
+            onView={() => handleViewStatusPage(myStatuses, 0)}
+          />
 
-            {statusFile && (
-              <button
-                onClick={() => handleStatusUpload(statusFile)}
-                className="text-xs mt-1 text-blue-500 font-semibold"
-              >
-                Upload
-              </button>
-            )}
-
-            <p className="text-xs mt-1 truncate w-16 text-center">Your Status</p>
-          </div>
-
-          {/* Status Avatars */}
+          {/* Other Users' Statuses */}
           {statusLoading === "loading" ? (
             <p className="text-sm text-gray-500">Loading...</p>
           ) : (
-            groupedStatuses.map((userStatuses) => {
-              const firstStatus = userStatuses[0];
-              const isOwn = firstStatus.user._id === user._id;
+            groupedStatuses
+              .filter((userStatuses) => userStatuses[0]?.user._id !== user?._id)
+              .map((userStatuses) => {
+                const firstStatus = userStatuses[0];
+                if (!firstStatus) return null;
 
-              return (
-                <div
-                  key={firstStatus.user._id}
-                  className="flex flex-col items-center relative cursor-pointer"
-                >
+                return (
                   <div
-                    className="w-20 h-20 rounded-full overflow-hidden border-2 border-pink-500"
+                    key={firstStatus.user._id}
+                    className="flex flex-col items-center cursor-pointer"
                     onClick={() => handleViewStatusPage(userStatuses, 0)}
                   >
-                    <img
-                      src={firstStatus.user.avatar || "/default-avatar.png"}
-                      alt={firstStatus.user.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-pink-500">
+                      <img
+                        src={firstStatus.user.avatar || "/default-avatar.png"}
+                        alt={firstStatus.user.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <p className="text-xs mt-1 truncate w-16 text-center">
+                      {firstStatus.user.name}
+                    </p>
                   </div>
-
-                  {isOwn && (
-                    <button
-                      onClick={() => handleDeleteStatus(firstStatus._id)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                    >
-                      ×
-                    </button>
-                  )}
-
-                  <p className="text-xs mt-1 truncate w-16 text-center">
-                    {firstStatus.user.name}
-                  </p>
-                </div>
-              );
-            })
+                );
+              })
           )}
         </div>
 
@@ -230,6 +207,8 @@ export default function HomePage() {
           userStatuses={clickedUserStatuses}
           startIndex={startIndex}
           onClose={() => setShowStatusPage(false)}
+          showDeleteButton={clickedUserStatuses[0]?.user?._id === user?._id}
+          onDeleteStatus={handleDeleteStatus}
         />
       )}
     </div>

@@ -2,37 +2,33 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createConversation } from "../store/feauters/chatSlice";
-
 import Swal from "sweetalert2";
 import Footer from "../components/Footer";
 import PostCard from "../components/PostCard";
 import StatusPage from "../components/StatusPage";
 import FollowModel from "../components/FollowModel";
 import ProfileSkeleton from "../components/ProfileSkeleton";
-
+import MyStatusBubble from "../components/MyStatusBubble";
 import {
   fetchUserPosts,
   fetchPostsByUserId,
 } from "../store/feauters/postSlice";
-
 import {
   fetchUserById,
   toggleFollow,
   fetchFollowers,
   fetchFollowing,
 } from "../store/feauters/authSlice";
-
 import {
   fetchStatusesByUserId,
   createStatus,
-  deleteStatus,
+  deleteStatus, // ADD THIS IMPORT
 } from "../store/feauters/statusSlice";
 
 export default function Profile() {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
 
   const loggedInUser = useSelector((state) => state.auth.user);
   const profileUser = useSelector((state) => state.auth.profileUser);
@@ -41,7 +37,6 @@ export default function Profile() {
   const { statuses, loading: statusLoading } = useSelector((state) => state.status);
   const followersList = useSelector((state) => state.auth.followersList) || [];
   const followingList = useSelector((state) => state.auth.followingList) || [];
- 
 
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
@@ -58,7 +53,6 @@ export default function Profile() {
     user?.followers?.some(
       (f) => (typeof f === "string" ? f : f._id) === loggedInId
     );
-
 
   /* -------------------- FETCH DATA -------------------- */
   useEffect(() => {
@@ -85,18 +79,20 @@ export default function Profile() {
   };
 
   /* -------------------- UPLOAD STATUS -------------------- */
-  const handleStatusUpload = async () => {
-    if (!statusFile) return;
-
+  const handleStatusUpload = async (file) => {
+    if (!file) return;
     const formData = new FormData();
-    formData.append("media", statusFile);
+    formData.append("media", file);
 
-    dispatch(createStatus(formData));
-    setStatusFile(null);
-    dispatch(fetchStatusesByUserId(loggedInUser._id)); // refresh after upload
+    try {
+      await dispatch(createStatus(formData)).unwrap();
+      dispatch(fetchStatusesByUserId(loggedInUser._id));
+    } catch (error) {
+      Swal.fire("Error", "Failed to upload status", "error");
+    }
   };
 
-  /* -------------------- DELETE STATUS -------------------- */
+  /* -------------------- DELETE STATUS -------------------- */ // ADD THIS FUNCTION
   const handleDeleteStatus = (statusId) => {
     Swal.fire({
       title: "Are you sure?",
@@ -114,11 +110,20 @@ export default function Profile() {
     });
   };
 
+  /* -------------------- GROUP MY STATUSES (HOME-PAGE STYLE) -------------------- */
+  const myStatuses = useMemo(() => {
+    if (!user?._id) return [];
+
+    const my = statuses
+      .filter((status) => status.user && status.user._id === user._id)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    return my;
+  }, [statuses, user]);
+
   /* -------------------- VIEW STATUS PAGE -------------------- */
-  const handleViewStatusPage = (status) => {
-    const userStatuses = statuses.filter((s) => s.user && s.user._id === status.user._id);
-    const index = userStatuses.findIndex((s) => s._id === status._id);
-    setClickedUserStatuses(userStatuses);
+  const handleViewStatusPage = (statusesToView, index = 0) => {
+    setClickedUserStatuses(statusesToView);
     setStartIndex(index);
     setShowStatusPage(true);
   };
@@ -132,13 +137,6 @@ export default function Profile() {
       Swal.fire("Error", err, "error");
     }
   };
-
-
-  /* -------------------- FILTERED STATUSES -------------------- */
-  const profileStatuses = useMemo(
-    () => statuses.filter((s) => s.user && s.user._id === user?._id),
-    [statuses, user]
-  );
 
   if (userPostsLoading === "loading" || (!isOwnProfile && profileUserLoading === "loading"))
     return <ProfileSkeleton />;
@@ -180,7 +178,6 @@ export default function Profile() {
                 </button>
               )}
 
-
               {isOwnProfile && (
                 <Link to="/edit-profile">
                   <button className="px-4 py-1 border rounded">Edit Profile</button>
@@ -216,62 +213,25 @@ export default function Profile() {
             </div>
 
             <div className="text-sm text-gray-700">
-              <p className="font-semibold">{user.name || user.username}</p>
+              <p className="font-semibold">Bio</p>
               <p>{user.bio || "No bio yet."}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Statuses */}
+      {/* ==================== STATUS / STORIES ==================== */}
       {isOwnProfile && (
         <div className="bg-white border-b border-gray-300 py-3 px-4 flex items-center space-x-4 overflow-x-auto">
-          {/* Add Status */}
-          <div className="flex flex-col items-center relative">
-            <label className="cursor-pointer flex flex-col items-center">
-              <div className="w-20 h-20 rounded-full border-2 border-gray-300 flex items-center justify-center text-xl font-bold">
-                +
-              </div>
-              <input type="file" hidden onChange={(e) => setStatusFile(e.target.files[0])} />
-            </label>
+          <MyStatusBubble
+            user={loggedInUser}
+            myStatuses={myStatuses}
+            onAdd={(file) => handleStatusUpload(file)}
+            onView={() => handleViewStatusPage(myStatuses, 0)}
+          />
 
-            {statusFile && (
-              <button onClick={handleStatusUpload} className="text-xs mt-1 text-blue-500 font-semibold">
-                Upload
-              </button>
-            )}
-
-            <p className="text-xs mt-1 truncate w-16 text-center">Your Status</p>
-          </div>
-
-          {statusLoading === "loading" ? (
+          {statusLoading === "loading" && (
             <p className="text-sm text-gray-500">Loading...</p>
-          ) : (
-            profileStatuses.map((status) => (
-              <div key={status._id} className="flex flex-col items-center relative cursor-pointer">
-                <div
-                  className="w-20 h-20 rounded-full overflow-hidden border-2 border-pink-500"
-                  onClick={() => handleViewStatusPage(status)}
-                >
-                  <img
-                    src={status.user?.avatar || "/default-avatar.png"}
-                    alt={status.user?.name || "User"}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {status.user?._id === loggedInUser._id && (
-                  <button
-                    onClick={() => handleDeleteStatus(status._id)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                  >
-                    ×
-                  </button>
-                )}
-
-                <p className="text-xs mt-1 truncate w-16 text-center">{status.user?.name || "User"}</p>
-              </div>
-            ))
           )}
         </div>
       )}
@@ -291,12 +251,14 @@ export default function Profile() {
         <Footer />
       </div>
 
-      {/* StatusPage Preview */}
+      {/* StatusPage Preview - UPDATED WITH DELETE PROPS */}
       {showStatusPage && (
         <StatusPage
           userStatuses={clickedUserStatuses}
           startIndex={startIndex}
           onClose={() => setShowStatusPage(false)}
+          showDeleteButton={clickedUserStatuses[0]?.user?._id === loggedInUser?._id} // ADD THIS
+          onDeleteStatus={handleDeleteStatus} // ADD THIS
         />
       )}
 

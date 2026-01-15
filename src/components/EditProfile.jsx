@@ -8,7 +8,7 @@ export default function EditProfile() {
   const navigate = useNavigate();
   const user = useSelector((state) => state.auth.user);
 
-  const [name, setName] = useState(user?.username || "");
+  const [name, setName] = useState(user?.name|| "");
   const [bio, setBio] = useState(user?.bio || "");
   const [avatar, setAvatar] = useState(null);
   const [preview, setPreview] = useState(user?.avatar || "/default-avatar.png");

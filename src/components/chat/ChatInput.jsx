@@ -226,11 +226,11 @@ export default function ChatInput({ conversationId }) {
 
       {/* File previews */}
       {filePreviews.length > 0 && (
-        <div className="flex gap-3  pb-2">
+        <div className="flex gap-3 overflow-x-auto">
           {filePreviews.map((p, i) => (
             <div
               key={i}
-              className="relative w-24 h-24 rounded-lg  border shrink-0"
+              className="relative w-24 h-24 rounded-lg overflow-hidden border"
             >
               {p.isVideo ? (
                 <div className="relative w-full h-full bg-black">
