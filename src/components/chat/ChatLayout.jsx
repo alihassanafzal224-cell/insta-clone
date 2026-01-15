@@ -17,11 +17,6 @@ export default function ChatLayout() {
   const { conversations, onlineUsers, currentUser } = useSelector(state => state.chat);
   const user = useSelector(state => state.auth.user);
 
-  /* ---------------- FETCH CONVERSATIONS ---------------- */
-  useEffect(() => {
-    dispatch(fetchConversations());
-  }, [dispatch]);
-
   /* ---------------- SOCKET LISTENERS ---------------- */
   useEffect(() => {
     if (!currentUser?._id) return;
