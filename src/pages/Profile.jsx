@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { createConversation } from "../store/feauters/chatSlice";
@@ -8,7 +8,6 @@ import PostCard from "../components/PostCard";
 import StatusPage from "../components/StatusPage";
 import FollowModel from "../components/FollowModel";
 import ProfileSkeleton from "../components/ProfileSkeleton";
-import MyStatusBubble from "../components/MyStatusBubble";
 import {
   fetchUserPosts,
   fetchPostsByUserId,
@@ -22,13 +21,14 @@ import {
 import {
   fetchStatusesByUserId,
   createStatus,
-  deleteStatus, // ADD THIS IMPORT
+  deleteStatus,
 } from "../store/feauters/statusSlice";
 
 export default function Profile() {
   const { userId } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const loggedInUser = useSelector((state) => state.auth.user);
   const profileUser = useSelector((state) => state.auth.profileUser);
@@ -40,7 +40,6 @@ export default function Profile() {
 
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
-  const [statusFile, setStatusFile] = useState(null);
   const [showStatusPage, setShowStatusPage] = useState(false);
   const [clickedUserStatuses, setClickedUserStatuses] = useState([]);
   const [startIndex, setStartIndex] = useState(0);
@@ -69,7 +68,24 @@ export default function Profile() {
     }
   }, [dispatch, userId, loggedInUser?._id]);
 
-  /* -------------------- FOLLOW -------------------- */
+  /* -------------------- STATUSES -------------------- */
+  const myStatuses = useMemo(() => {
+    if (!user?._id) return [];
+
+    const my = statuses
+      .filter((status) => status.user && status.user._id === user._id)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    return my;
+  }, [statuses, user]);
+
+  const hasActiveStatus = useMemo(() => {
+    // Status is active if created within last 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    return myStatuses.some(status => new Date(status.createdAt) > twentyFourHoursAgo);
+  }, [myStatuses]);
+
+  /* -------------------- HANDLERS -------------------- */
   const handleFollow = () => {
     if (isOwnProfile) {
       Swal.fire({ icon: "error", title: "Oops...", text: "You cannot follow yourself!" });
@@ -78,7 +94,6 @@ export default function Profile() {
     dispatch(toggleFollow(user._id));
   };
 
-  /* -------------------- UPLOAD STATUS -------------------- */
   const handleStatusUpload = async (file) => {
     if (!file) return;
     const formData = new FormData();
@@ -87,12 +102,12 @@ export default function Profile() {
     try {
       await dispatch(createStatus(formData)).unwrap();
       dispatch(fetchStatusesByUserId(loggedInUser._id));
+      Swal.fire("Success", "Status uploaded successfully", "success");
     } catch (error) {
       Swal.fire("Error", "Failed to upload status", "error");
     }
   };
 
-  /* -------------------- DELETE STATUS -------------------- */ // ADD THIS FUNCTION
   const handleDeleteStatus = (statusId) => {
     Swal.fire({
       title: "Are you sure?",
@@ -110,25 +125,37 @@ export default function Profile() {
     });
   };
 
-  /* -------------------- GROUP MY STATUSES (HOME-PAGE STYLE) -------------------- */
-  const myStatuses = useMemo(() => {
-    if (!user?._id) return [];
+  const handleAddStatusClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
-    const my = statuses
-      .filter((status) => status.user && status.user._id === user._id)
-      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      handleStatusUpload(file);
+    }
+    e.target.value = null; // Reset input
+  };
 
-    return my;
-  }, [statuses, user]);
+  const handleAvatarClick = () => {
+    if (myStatuses.length > 0 && hasActiveStatus) {
+      handleViewStatusPage(myStatuses, 0);
+    }
+  };
 
-  /* -------------------- VIEW STATUS PAGE -------------------- */
   const handleViewStatusPage = (statusesToView, index = 0) => {
     setClickedUserStatuses(statusesToView);
     setStartIndex(index);
     setShowStatusPage(true);
   };
 
-  /* -------------------- Messages -------------------- */
+  const handleAddHighlight = () => {
+    console.log("Add highlight clicked");
+    // You can add highlight upload logic here
+  };
+
   const handleMessage = async () => {
     try {
       const res = await dispatch(createConversation(user._id)).unwrap();
@@ -148,39 +175,76 @@ export default function Profile() {
       {/* Profile Header */}
       <div className="bg-white border-b border-gray-300 px-6 py-6">
         <div className="flex flex-col md:flex-row items-center md:items-start md:space-x-8">
-          <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-gray-300 mb-4 md:mb-0">
-            <img
-              src={user?.avatar || "/default-avatar.png"}
-              alt={user?.username || "User"}
-              className="w-full h-full object-cover"
-            />
+          {/* Avatar with Status Indicator */}
+          <div className="relative w-28 h-28 mb-4 md:mb-0">
+            <div
+              className={`w-full h-full rounded-full border-2 ${hasActiveStatus ? 'border-blue-500' : 'border-gray-300'} overflow-hidden cursor-pointer`}
+              onClick={handleAvatarClick}
+            >
+              <img
+                src={user?.avatar || "/default-avatar.png"}
+                alt={user?.username || "User"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Status ring if user has active statuses */}
+            {hasActiveStatus && (
+              <span className="absolute inset-0 rounded-full border-4 border-blue-500 animate-pulse pointer-events-none"></span>
+            )}
+
+            {/* Add Status button (only for own profile) */}
+            {isOwnProfile && (
+              <>
+                <button
+                  onClick={handleAddStatusClick}
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center border-2 border-white hover:bg-blue-600 shadow-md transition-transform hover:scale-110"
+                  title="Add to story"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*,video/*"
+                  onChange={handleFileChange}
+                />
+              </>
+            )}
           </div>
 
+          {/* User Info */}
           <div className="flex-1 flex flex-col justify-center w-full">
             <div className="flex flex-col md:flex-row md:items-center md:space-x-6 mb-3">
               <h1 className="text-2xl font-bold">{user.username}</h1>
 
               {!isOwnProfile && (
-                <button
-                  onClick={handleFollow}
-                  className={`mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm transition ${isFollowing ? "bg-gray-200 hover:bg-gray-300" : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                >
-                  {isFollowing ? "Unfollow" : "Follow"}
-                </button>
-              )}
-              {!isOwnProfile && (
-                <button
-                  onClick={handleMessage}
-                  className="mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm bg-green-500 text-white hover:bg-green-600"
-                >
-                  Message
-                </button>
+                <>
+                  <button
+                    onClick={handleFollow}
+                    className={`mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm transition ${isFollowing ? "bg-gray-200 hover:bg-gray-300" : "bg-blue-500 text-white hover:bg-blue-600"
+                      }`}
+                  >
+                    {isFollowing ? "Unfollow" : "Follow"}
+                  </button>
+
+                  <button
+                    onClick={handleMessage}
+                    className="mt-2 md:mt-0 px-4 py-1 border rounded font-semibold text-sm bg-green-500 text-white hover:bg-green-600"
+                  >
+                    Message
+                  </button>
+                </>
               )}
 
               {isOwnProfile && (
                 <Link to="/edit-profile">
-                  <button className="px-4 py-1 border rounded">Edit Profile</button>
+                  <button className="mt-2 md:mt-0 px-4 py-1 border rounded hover:bg-gray-50 transition">
+                    Edit Profile
+                  </button>
                 </Link>
               )}
             </div>
@@ -196,9 +260,10 @@ export default function Profile() {
                   dispatch(fetchFollowers(user._id));
                   setShowFollowersModal(true);
                 }}
-                className="cursor-pointer font-semibold"
+                className="cursor-pointer hover:text-blue-500 transition"
               >
-                {user.followers?.length || 0} followers
+                <span className="font-semibold text-lg">{user.followers?.length || 0}</span>
+                <span className="text-gray-500 text-sm ml-1">followers</span>
               </p>
 
               <p
@@ -206,9 +271,10 @@ export default function Profile() {
                   dispatch(fetchFollowing(user._id));
                   setShowFollowingModal(true);
                 }}
-                className="cursor-pointer font-semibold"
+                className="cursor-pointer hover:text-blue-500 transition"
               >
-                {user.following?.length || 0} following
+                <span className="font-semibold text-lg">{user.following?.length || 0}</span>
+                <span className="text-gray-500 text-sm ml-1">following</span>
               </p>
             </div>
 
@@ -220,21 +286,51 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* ==================== STATUS / STORIES ==================== */}
-      {isOwnProfile && (
-        <div className="bg-white border-b border-gray-300 py-3 px-4 flex items-center space-x-4 overflow-x-auto">
-          <MyStatusBubble
-            user={loggedInUser}
-            myStatuses={myStatuses}
-            onAdd={(file) => handleStatusUpload(file)}
-            onView={() => handleViewStatusPage(myStatuses, 0)}
-          />
-
-          {statusLoading === "loading" && (
-            <p className="text-sm text-gray-500">Loading...</p>
+      {/* ==================== SIMPLE HIGHLIGHTS SECTION ==================== */}
+      <div className="bg-white border-b border-gray-300 py-3 px-4">
+        <div className="flex items-center space-x-4 overflow-x-auto">
+          {/* Simple + icon for highlights */}
+          {isOwnProfile && (
+            <div className="shrink-0 flex flex-col items-center cursor-pointer" onClick={handleAddHighlight}>
+              <div className="w-16 h-16 rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center border-2 border-gray-200 hover:border-blue-300 transition-all duration-200 hover:scale-105 hover:shadow-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 00-1 1v5H4a1 1 0 100 2h5v5a1 1 0 102 0v-5h5a1 1 0 100-2h-5V4a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className="text-xs mt-1 text-gray-600 hover:text-blue-600">Highlight</span>
+            </div>
           )}
+
+          {/* Existing highlights (if any) */}
+          {/* {myStatuses.length > 0 && myStatuses.map((status, index) => (
+            <div
+              key={status._id}
+              className="shrink-0 flex flex-col items-center cursor-pointer"
+              onClick={() => handleViewStatusPage(myStatuses, index)}
+            >
+              <div className="w-16 h-16 rounded-full border-2 border-gray-300 overflow-hidden hover:border-blue-300 transition-all duration-200 hover:scale-105">
+                {status.mediaType?.startsWith("video") ? (
+                  <video
+                    src={status.mediaUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src={status.mediaUrl}
+                    alt="highlight"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
+              <span className="text-xs mt-1 text-gray-600 truncate max-w-16">
+                {status.title || `Highlight ${index + 1}`}
+              </span>
+            </div>
+          ))} */}
         </div>
-      )}
+      </div>
 
       {/* Posts Grid */}
       <main className="pt-4 max-w-5xl mx-auto w-full flex-1 px-2">
@@ -251,14 +347,14 @@ export default function Profile() {
         <Footer />
       </div>
 
-      {/* StatusPage Preview - UPDATED WITH DELETE PROPS */}
+      {/* StatusPage Preview */}
       {showStatusPage && (
         <StatusPage
           userStatuses={clickedUserStatuses}
           startIndex={startIndex}
           onClose={() => setShowStatusPage(false)}
-          showDeleteButton={clickedUserStatuses[0]?.user?._id === loggedInUser?._id} // ADD THIS
-          onDeleteStatus={handleDeleteStatus} // ADD THIS
+          showDeleteButton={clickedUserStatuses[0]?.user?._id === loggedInUser?._id}
+          onDeleteStatus={handleDeleteStatus}
         />
       )}
 

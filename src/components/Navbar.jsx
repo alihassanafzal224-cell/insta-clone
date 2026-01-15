@@ -19,7 +19,7 @@ export const Navbar = () => {
             </span>
             <button
               onClick={() => dispatch(logoutUserAsync())}
-              className="text-sm font-semibold text-blue-500"
+              className="text-sm font-semibold text-blue-500 cursor-pointer"
             >
               Logout
             </button>
